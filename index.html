@@ -1,0 +1,956 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Map Explorer GIS</title>
+
+<link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/light/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://js.arcgis.com/4.30/"></script>
+
+<style>
+  /* ===== Warm Neutral design tokens ===== */
+  :root{
+    --ink-950:#1A1714; --ink-900:#2A2622; --ink-800:#3B362F; --ink-700:#524C43;
+    --ink-600:#6B6459; --ink-500:#8A8276; --ink-400:#ABA398; --ink-300:#C9C2B8;
+    --ink-200:#E2DCD2; --ink-100:#EFEAE2; --ink-50:#F8F5EF;
+    --paper:#FCFAF6; --white:#FFFFFF;
+    --accent:#C2763C; --accent-soft:#E9D4BF;
+
+    --bg:var(--paper); --surface:var(--white);
+    --text:var(--ink-900); --text-soft:var(--ink-600); --text-mute:var(--ink-500);
+    --border:var(--ink-200); --border-soft:var(--ink-100);
+
+    --font-display:'Bricolage Grotesque',ui-sans-serif,system-ui,sans-serif;
+    --font-body:'Hanken Grotesk',ui-sans-serif,system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,'SF Mono',monospace;
+
+    --text-xs:0.8125rem; --text-sm:0.9375rem; --text-base:1.0625rem; --text-lg:1.25rem; --text-xl:1.625rem;
+
+    --radius-sm:8px; --radius-md:12px; --radius-lg:18px; --radius-full:999px;
+    --shadow-sm:0 1px 2px rgba(42,38,34,.06),0 1px 3px rgba(42,38,34,.05);
+    --shadow-md:0 4px 12px rgba(42,38,34,.07),0 2px 4px rgba(42,38,34,.05);
+    --shadow-lg:0 12px 32px rgba(42,38,34,.10),0 4px 8px rgba(42,38,34,.05);
+
+    --rail-w:66px; --panel-w:336px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;font-family:var(--font-body);font-size:var(--text-sm);
+    color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  #app{display:flex;flex-direction:column;height:100%}
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex;align-items:center;gap:10px;height:58px;padding:0 18px;flex:0 0 auto;
+    position:relative;z-index:6;
+    background:var(--surface);color:var(--text);
+    border-bottom:1px solid var(--border);box-shadow:var(--shadow-sm);
+  }
+  .brand{display:flex;align-items:baseline;gap:8px;font-family:var(--font-display)}
+  .brand b{font-size:var(--text-xl);font-weight:700;letter-spacing:-.02em;color:var(--ink-950)}
+  .brand span{font-size:var(--text-xs);font-weight:600;color:var(--text-mute);letter-spacing:.16em;text-transform:uppercase}
+  .spacer{flex:1}
+  header button{
+    font-family:var(--font-body);font-size:var(--text-xs);font-weight:600;
+    color:var(--text);background:transparent;
+    border:1px solid var(--border);border-radius:var(--radius-full);
+    padding:8px 15px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;
+    transition:background .15s ease,border-color .15s ease;
+  }
+  header button:hover{background:var(--ink-50);border-color:var(--ink-300)}
+  header button:active{transform:translateY(1px)}
+  header button.primary{background:var(--ink-900);color:var(--paper);border-color:var(--ink-900)}
+  header button.primary:hover{background:var(--ink-950)}
+  header button.mode-on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink-900)}
+  header button.mode-on:hover{background:var(--accent-soft);filter:brightness(.97)}
+
+  /* ---------- Body layout ---------- */
+  #body{flex:1;display:flex;min-height:0}
+
+  /* Tool rail */
+  #rail{
+    width:var(--rail-w);flex:0 0 auto;background:var(--surface);
+    display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 0;
+    border-right:1px solid var(--border);overflow-y:auto;
+  }
+  .tool{
+    width:50px;height:50px;border-radius:var(--radius-md);border:1px solid transparent;
+    background:transparent;color:var(--text-soft);cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    font-size:9px;font-weight:600;letter-spacing:.02em;line-height:1;font-family:var(--font-body);
+    transition:background .15s ease,color .15s ease,border-color .15s ease;
+  }
+  .tool .ico{font-size:19px}
+  .tool:hover{background:var(--ink-50);color:var(--ink-900)}
+  .tool.active{background:var(--accent-soft);color:var(--ink-900);border-color:var(--accent)}
+
+  /* Sliding panel */
+  #panel{
+    width:var(--panel-w);flex:0 0 auto;background:var(--ink-50);
+    border-right:1px solid var(--border);display:none;flex-direction:column;min-height:0;
+  }
+  #panel.open{display:flex}
+  .panel-head{
+    padding:16px 18px 12px;border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .panel-head h2{margin:0;font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;letter-spacing:-.01em;color:var(--ink-900)}
+  .panel-head .close{border:none;background:none;font-size:22px;line-height:1;color:var(--text-mute);cursor:pointer;padding:2px 6px;border-radius:var(--radius-sm)}
+  .panel-head .close:hover{background:var(--ink-100);color:var(--text)}
+  .panel-body{padding:16px 18px;overflow-y:auto;flex:1}
+  .pane{display:none}
+  .pane.active{display:block}
+  .hint{font-size:var(--text-xs);color:var(--text-soft);margin:0 0 14px;line-height:1.55}
+
+  .field-label{display:block;font-size:var(--text-xs);font-weight:600;color:var(--text-soft);letter-spacing:.04em;margin:16px 0 7px}
+  input[type=text],input[type=search]{
+    width:100%;padding:10px 13px;border:1px solid var(--border);border-radius:var(--radius-md);
+    background:var(--white);font-size:var(--text-sm);font-family:var(--font-body);color:var(--text);
+  }
+  input[type=text]:focus,input[type=search]:focus{outline:none;border-color:var(--ink-700);box-shadow:0 0 0 3px var(--ink-100)}
+  .row{display:flex;gap:8px}
+  .row > *{flex:1}
+
+  .btn{
+    width:100%;padding:10px 14px;border-radius:var(--radius-full);border:1px solid var(--ink-900);
+    background:var(--ink-900);color:var(--paper);font-weight:600;font-size:var(--text-sm);
+    font-family:var(--font-body);cursor:pointer;transition:background .15s ease,border-color .15s ease,transform .1s ease;
+  }
+  .btn:hover{background:var(--ink-950)}
+  .btn:active{transform:translateY(1px)}
+  .btn.ghost{background:transparent;color:var(--text);border-color:var(--border)}
+  .btn.ghost:hover{background:var(--ink-50);border-color:var(--ink-300)}
+  .btn.marker{background:var(--accent);border-color:var(--accent);color:var(--white)}
+  .btn.marker:hover{filter:brightness(.94);background:var(--accent)}
+  .btn-row{display:flex;gap:8px;margin-top:11px}
+  .btn-row .btn{width:auto;flex:1}
+
+  /* search result cards */
+  .results{margin-top:14px;display:flex;flex-direction:column;gap:10px}
+  .card{border:1px solid var(--border);border-radius:var(--radius-lg);padding:13px 14px;background:var(--surface);box-shadow:var(--shadow-sm)}
+  .card h4{margin:0 0 3px;font-family:var(--font-display);font-weight:600;font-size:var(--text-sm);color:var(--ink-900)}
+  .card .meta{font-size:var(--text-xs);color:var(--text-mute);margin:0 0 9px;line-height:1.45}
+  .card .tag{display:inline-flex;align-items:center;font-size:var(--text-xs);font-weight:600;color:var(--ink-800);
+    background:var(--accent-soft);border-radius:var(--radius-full);padding:2px 10px;margin-bottom:8px}
+  .card .add{font-size:var(--text-xs);font-weight:600;color:var(--paper);background:var(--ink-900);
+    border:1px solid var(--ink-900);border-radius:var(--radius-full);padding:6px 14px;cursor:pointer;transition:background .15s ease}
+  .card .add:hover{background:var(--ink-950)}
+  .empty{font-size:var(--text-sm);color:var(--text-mute);font-style:italic;padding:8px 0}
+
+  .widget-host{margin-top:8px}
+  .esri-basemap-gallery{background:transparent}
+
+  /* Help list */
+  .help-item{display:flex;gap:11px;margin-bottom:13px}
+  .help-item .k{font-size:18px;width:24px;text-align:center;flex:0 0 24px}
+  .help-item .t{font-size:var(--text-sm);line-height:1.5;color:var(--text-soft)}
+  .help-item .t b{color:var(--ink-900);font-weight:600}
+
+  /* ---------- Map + footer ---------- */
+  #map-wrap{flex:1;position:relative;min-width:0}
+  #viewDiv{position:absolute;inset:0}
+  #footer{
+    position:absolute;left:0;right:0;bottom:0;height:28px;z-index:5;
+    display:flex;align-items:center;gap:20px;padding:0 14px;
+    background:rgba(252,250,246,.92);color:var(--text);font-size:var(--text-xs);
+    font-family:var(--font-mono);border-top:1px solid var(--border);backdrop-filter:blur(6px);
+  }
+  #footer .lbl{color:var(--text-mute);font-weight:600;letter-spacing:.06em;font-family:var(--font-body)}
+  #coordOut{cursor:copy}
+  #coordOut,#scaleOut{font-family:var(--font-mono);color:var(--ink-900)}
+
+  /* toast */
+  #toast{
+    position:absolute;top:16px;left:50%;transform:translateX(-50%) translateY(-12px);
+    z-index:30;background:var(--ink-950);color:var(--paper);padding:10px 18px;border-radius:var(--radius-full);
+    font-size:var(--text-sm);font-weight:500;box-shadow:var(--shadow-lg);
+    opacity:0;pointer-events:none;transition:opacity .22s ease,transform .22s ease;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* modals */
+  .modal-bg{position:fixed;inset:0;z-index:50;background:rgba(26,23,20,.42);display:none;align-items:center;justify-content:center}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    width:min(430px,92vw);padding:24px;box-shadow:var(--shadow-lg)}
+  .modal h3{margin:0 0 7px;font-family:var(--font-display);font-weight:700;font-size:var(--text-xl);letter-spacing:-.01em;color:var(--ink-950)}
+  .modal p{font-size:var(--text-sm);color:var(--text-soft);line-height:1.55;margin:0 0 16px}
+  .modal a{color:var(--accent);font-weight:600;text-decoration:none}
+  .modal a:hover{text-decoration:underline}
+
+  /* ---------- ArcGIS widget cohesion ---------- */
+  .esri-widget,.esri-input,.esri-widget__table,.esri-menu,.esri-popup__content{font-family:var(--font-body)}
+  .esri-widget h1,.esri-widget h2,.esri-widget h3,.esri-widget__heading,.esri-popup__header-title{font-family:var(--font-display)}
+  .esri-ui-corner .esri-component{border-radius:var(--radius-md);box-shadow:var(--shadow-md)}
+  .esri-widget--button{border-radius:var(--radius-md)}
+  .esri-search__container,.esri-search__input{border-radius:var(--radius-md)}
+  .esri-basemap-gallery__item--selected,.esri-basemap-gallery__item:focus{outline:2px solid var(--accent);outline-offset:-2px}
+  .esri-sketch__section,.esri-measurement{font-family:var(--font-body)}
+
+  @media (max-width:720px){
+    :root{--panel-w:288px}
+    .brand span{display:none}
+    .tool{width:46px;height:46px}
+    header button span.lbltxt{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{transition:none !important;animation:none !important}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="brand"><b>Map Explorer</b><span>GIS</span></div>
+    <div class="spacer"></div>
+    <button id="btn3D" title="Switch between flat (2D) and 3D">🧊 3D view</button>
+    <button id="btnOpen">📂 Open map</button>
+    <button id="btnSave" class="primary">💾 Save map</button>
+    <input type="file" id="fileInput" accept=".json,application/json" style="display:none" />
+  </header>
+
+  <div id="body">
+    <!-- Tool rail -->
+    <nav id="rail">
+      <button class="tool" data-pane="basemaps"><span class="ico">🗺️</span>Basemap</button>
+      <button class="tool" data-pane="add"><span class="ico">➕</span>Add data</button>
+      <button class="tool" data-pane="layers"><span class="ico">📋</span>Layers</button>
+      <button class="tool" data-pane="measure"><span class="ico">📏</span>Measure</button>
+      <button class="tool" data-pane="sketch"><span class="ico">✏️</span>Sketch</button>
+      <button class="tool" data-pane="coords"><span class="ico">📍</span>Coords</button>
+      <button class="tool" data-pane="help"><span class="ico">❓</span>Help</button>
+    </nav>
+
+    <!-- Sliding panel -->
+    <section id="panel">
+      <div class="panel-head">
+        <h2 id="panelTitle">Basemap</h2>
+        <button class="close" id="panelClose" title="Close panel">×</button>
+      </div>
+      <div class="panel-body">
+
+        <!-- Basemaps -->
+        <div class="pane" id="pane-basemaps">
+          <p class="hint">Pick the background map your map sits on. Imagery shows photos from space; Topographic shows roads and land features.</p>
+          <div id="basemapHost" class="widget-host"></div>
+        </div>
+
+        <!-- Add data -->
+        <div class="pane" id="pane-add">
+          <p class="hint">Search ArcGIS Online for free public layers — try “rivers”, “earthquakes”, “national parks”, or “population”. Then press Add.</p>
+          <label class="field-label" for="layerQuery">Search public layers</label>
+          <div class="row">
+            <input type="search" id="layerQuery" placeholder="e.g. earthquakes" />
+          </div>
+          <div class="btn-row"><button class="btn" id="layerSearchBtn">Search ArcGIS Online</button></div>
+          <div class="results" id="layerResults"></div>
+
+          <label class="field-label" for="layerUrl">Or paste a service URL</label>
+          <input type="text" id="layerUrl" placeholder="https://…/FeatureServer/0" />
+          <div class="btn-row"><button class="btn ghost" id="layerUrlBtn">Add from URL</button></div>
+
+          <label class="field-label">Upload your own data</label>
+          <p class="hint" style="margin:0 0 9px">A spreadsheet (CSV) with <b>latitude</b> and <b>longitude</b> columns, or a GeoJSON, GPX, or KML file. Your points and shapes are added to your drawings so you can style, edit, and save them.</p>
+          <button class="btn ghost" id="dataUploadBtn">📁 Choose a data file…</button>
+          <input type="file" id="dataFileInput" accept=".csv,.tsv,.txt,.geojson,.json,.gpx,.kml" style="display:none" />
+        </div>
+
+        <!-- Layers -->
+        <div class="pane" id="pane-layers">
+          <p class="hint">Turn layers on and off, reorder them, or remove ones you don’t need.</p>
+          <div id="layerListHost" class="widget-host"></div>
+        </div>
+
+        <!-- Measure -->
+        <div class="pane" id="pane-measure">
+          <p class="hint">Measure distance along a line or the area of a shape. Click on the map to place points; double-click to finish.</p>
+          <div class="btn-row">
+            <button class="btn" id="measDist">📏 Distance</button>
+            <button class="btn" id="measArea">⬛ Area</button>
+          </div>
+          <div class="btn-row"><button class="btn ghost" id="measClear">Clear measurement</button></div>
+          <div id="measureHost" class="widget-host" style="margin-top:12px"></div>
+        </div>
+
+        <!-- Sketch -->
+        <div class="pane" id="pane-sketch">
+          <p class="hint">Draw points, lines, and shapes right on the map. Use the tools below to add, move, and delete your drawings.</p>
+          <div id="sketchHost" class="widget-host"></div>
+          <div class="btn-row"><button class="btn ghost" id="sketchClear">Erase all drawings</button></div>
+        </div>
+
+        <!-- Coordinates -->
+        <div class="pane" id="pane-coords">
+          <p class="hint">See latitude and longitude. Move your mouse over the map to read coordinates, click the map to lock one in, or type coordinates to jump there.</p>
+          <div id="coordHost" class="widget-host"></div>
+        </div>
+
+        <!-- Help -->
+        <div class="pane" id="pane-help">
+          <p class="hint">A quick tour of every tool. GIS stands for <b>Geographic Information System</b> — software for making and studying maps.</p>
+          <div class="help-item"><span class="k">🗺️</span><span class="t"><b>Basemap</b> — change the background map (satellite, streets, topographic…).</span></div>
+          <div class="help-item"><span class="k">➕</span><span class="t"><b>Add data</b> — find free public map layers and add them on top.</span></div>
+          <div class="help-item"><span class="k">📋</span><span class="t"><b>Layers</b> — show, hide, reorder, or remove your layers.</span></div>
+          <div class="help-item"><span class="k">📏</span><span class="t"><b>Measure</b> — find how long or how big something is.</span></div>
+          <div class="help-item"><span class="k">✏️</span><span class="t"><b>Sketch</b> — draw your own points, lines, and shapes.</span></div>
+          <div class="help-item"><span class="k">📍</span><span class="t"><b>Coords</b> — read and enter latitude/longitude.</span></div>
+          <div class="help-item"><span class="k">🔍</span><span class="t"><b>Search</b> (top of map) — find a place or address.</span></div>
+          <div class="help-item"><span class="k">💾</span><span class="t"><b>Save / Open</b> — save your map as a file, then open it again later. The file follows the ArcGIS web map format, so it also works in ArcGIS Online.</span></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Map -->
+    <div id="map-wrap">
+      <div id="viewDiv"></div>
+      <div id="toast"></div>
+      <div id="footer">
+        <span><span class="lbl">LAT/LONG</span>&nbsp; <span id="coordOut">move over the map…</span></span>
+        <span><span class="lbl">SCALE</span>&nbsp; 1:<span id="scaleOut">—</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Save modal -->
+<div class="modal-bg" id="saveModal">
+  <div class="modal">
+    <h3>Save your map</h3>
+    <p>This downloads a web map file (<b>.json</b>) you can open again here or upload to ArcGIS Online.</p>
+    <label class="field-label" for="mapTitle">Map name</label>
+    <input type="text" id="mapTitle" value="My Map" />
+    <div class="btn-row">
+      <button class="btn marker" id="saveConfirm">Download map file</button>
+      <button class="btn ghost" id="saveCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+require([
+  "esri/Map","esri/views/MapView","esri/views/SceneView","esri/WebMap","esri/Basemap",
+  "esri/widgets/BasemapGallery","esri/widgets/BasemapGallery/support/LocalBasemapsSource",
+  "esri/widgets/Search","esri/widgets/Measurement",
+  "esri/widgets/Sketch","esri/widgets/CoordinateConversion","esri/widgets/LayerList",
+  "esri/widgets/Home","esri/widgets/ScaleBar","esri/widgets/Locate",
+  "esri/layers/GraphicsLayer","esri/layers/Layer",
+  "esri/portal/PortalItem","esri/geometry/Point","esri/geometry/Polyline","esri/geometry/Polygon","esri/geometry/Extent","esri/Graphic",
+  "esri/geometry/support/jsonUtils","esri/symbols/support/jsonUtils","esri/config"
+], function(
+  Map, MapView, SceneView, WebMap, Basemap,
+  BasemapGallery, LocalBasemapsSource,
+  Search, Measurement,
+  Sketch, CoordinateConversion, LayerList,
+  Home, ScaleBar, Locate,
+  GraphicsLayer, Layer,
+  PortalItem, Point, Polyline, Polygon, Extent, Graphic,
+  geomJsonUtils, symbolJsonUtils, esriConfig
+){
+  "use strict";
+
+  /* ---------- helpers ---------- */
+  const $ = (id) => document.getElementById(id);
+  let toastTimer;
+  function toast(msg){
+    const t = $("toast");
+    t.textContent = msg; t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove("show"), 2600);
+  }
+
+  /* ---------- map (shared by 2D + 3D) ---------- */
+  const sketchLayer = new GraphicsLayer({ title:"My drawings", listMode:"show" });
+  const map = new Map({ basemap:"topo-vector", layers:[sketchLayer], ground:"world-elevation" });
+
+  // track only the layers students add (so save stays clean)
+  const addedLayers = [];
+  function registerLayer(layer){ if(layer && addedLayers.indexOf(layer)===-1) addedLayers.push(layer); }
+
+  /* ---------- search source (place / address, free OpenStreetMap) ---------- */
+  const osmSource = {
+    name: "Places & addresses",
+    placeholder: "Find a place or address",
+    getSuggestions: (p) =>
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(p.suggestTerm)}`)
+        .then(r=>r.json())
+        .then(d=>d.map((x,i)=>({ key:x.place_id, text:x.display_name, sourceIndex:p.sourceIndex }))),
+    getResults: (p) =>
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${encodeURIComponent(p.suggestTerm)}`)
+        .then(r=>r.json())
+        .then(d=>d.map(x=>{
+          const pt = new Point({ longitude:+x.lon, latitude:+x.lat });
+          return {
+            extent: x.boundingbox ? new Extent({
+              ymin:+x.boundingbox[0], ymax:+x.boundingbox[1],
+              xmin:+x.boundingbox[2], xmax:+x.boundingbox[3],
+              spatialReference:{ wkid:4326 }
+            }) : null,
+            feature: new Graphic({ geometry:pt, attributes:{ name:x.display_name } }),
+            name: x.display_name,
+            target: pt
+          };
+        }))
+  };
+
+  /* ---------- curated basemaps: a different set in 3D mode ---------- */
+  const BASEMAPS_2D = ["topo-vector","streets-vector","satellite","hybrid","gray-vector","dark-gray-vector","oceans","national-geographic","osm","terrain"];
+  const BASEMAPS_3D = ["hybrid","satellite","topo-vector","terrain","national-geographic","streets-night-vector","oceans"];
+  function basemapSource(ids){
+    return new LocalBasemapsSource({ basemaps: ids.map(id=>Basemap.fromId(id)) });
+  }
+
+  /* ---------- view + widgets (rebuilt when switching 2D <-> 3D) ---------- */
+  let view = null, is3D = false, buildingsLayer = null;
+  let search, basemapGallery, layerList, measurement, sketch, coordWidget;
+  let homeW, locateW, scaleBar, pointerHandle, scaleHandle;
+
+  function fmt(n){ return n.toFixed(5); }
+
+  function destroyActiveView(){
+    [search,basemapGallery,layerList,measurement,sketch,coordWidget,homeW,locateW,scaleBar]
+      .forEach(w=>{ try{ if(w) w.destroy(); }catch(e){} });
+    search=basemapGallery=layerList=measurement=sketch=coordWidget=homeW=locateW=scaleBar=null;
+    try{ if(pointerHandle) pointerHandle.remove(); }catch(e){}
+    try{ if(scaleHandle) scaleHandle.remove(); }catch(e){}
+    if(view){ try{ view.destroy(); }catch(e){} view=null; }
+  }
+
+  function buildWidgets(){
+    // in-map controls
+    search = new Search({ view, includeDefaultSources:false, sources:[osmSource], popupEnabled:true });
+    view.ui.add(search, { position:"top-right", index:0 });
+    try{ view.ui.move("zoom","top-left"); }catch(e){}
+    homeW = new Home({ view });   view.ui.add(homeW, "top-left");
+    locateW = new Locate({ view }); view.ui.add(locateW, "top-left");
+    scaleBar = new ScaleBar({ view, unit:"dual" }); view.ui.add(scaleBar, "bottom-right");
+
+    // panel widgets
+    basemapGallery = new BasemapGallery({ view, container:"basemapHost", source: basemapSource(is3D?BASEMAPS_3D:BASEMAPS_2D) });
+
+    layerList = new LayerList({
+      view, container:"layerListHost",
+      listItemCreatedFunction: (e)=>{
+        const item = e.item;
+        if(item.layer === sketchLayer) item.title = "My drawings";
+        item.actionsSections = [[
+          { title:"Remove", icon:"trash", id:"remove-layer" },
+          { title:"Zoom to", icon:"zoom-to-object", id:"zoom-to" }
+        ]];
+      }
+    });
+    layerList.on("trigger-action", (e)=>{
+      const layer = e.item.layer;
+      if(e.action.id==="remove-layer"){
+        map.remove(layer);
+        const i = addedLayers.indexOf(layer); if(i>-1) addedLayers.splice(i,1);
+        if(layer===buildingsLayer) buildingsLayer=null;
+      } else if(e.action.id==="zoom-to" && layer.fullExtent){
+        view.goTo(layer.fullExtent).catch(()=>{});
+      }
+    });
+
+    measurement = new Measurement({ view, container:"measureHost" });
+    sketch = new Sketch({ view, layer:sketchLayer, container:"sketchHost",
+      creationMode:"update", visibleElements:{ settingsMenu:false } });
+    coordWidget = new CoordinateConversion({ view, container:"coordHost" });
+
+    // live footer readout
+    pointerHandle = view.on("pointer-move", (evt)=>{
+      const pt = view.toMap({ x:evt.x, y:evt.y });
+      if(pt && pt.latitude!=null) $("coordOut").textContent = `${fmt(pt.latitude)}, ${fmt(pt.longitude)}`;
+    });
+    scaleHandle = view.watch("scale", (s)=>{ if(s) $("scaleOut").textContent = Math.round(s).toLocaleString(); });
+  }
+
+  /* ---------- 3D context: real ArcGIS 3D services (terrain + OSM buildings) ---------- */
+  function add3DContext(){
+    map.ground = "world-elevation"; // Esri WorldElevation3D / Terrain3D
+    if(buildingsLayer){
+      if(!map.layers.includes(buildingsLayer)) map.add(buildingsLayer);
+      return;
+    }
+    // OpenStreetMap 3D Buildings (Esri Living Atlas, public)
+    Layer.fromPortalItem({ portalItem:new PortalItem({ id:"ca0470dbbddb4db28bad74ed39949e25" }) })
+      .then(l=>{ l.title="3D Buildings (OpenStreetMap)"; l.listMode="show"; buildingsLayer=l; if(is3D) map.add(l); })
+      .catch(()=>{ /* buildings optional */ });
+  }
+  function remove3DContext(){
+    if(buildingsLayer && map.layers.includes(buildingsLayer)) map.remove(buildingsLayer);
+  }
+
+  /* ---------- the 2D / 3D switch ---------- */
+  function setView(mode, announce){
+    const vp = view ? view.viewpoint : null;
+    destroyActiveView();
+    is3D = (mode === "3d");
+    if(is3D){
+      view = new SceneView({ container:"viewDiv", map, viewpoint: vp || undefined });
+      add3DContext();
+    } else {
+      remove3DContext(); // SceneLayer can't draw in 2D
+      view = new MapView({
+        container:"viewDiv", map,
+        viewpoint: vp || undefined,
+        center: vp ? undefined : [-94.578, 39.0997],
+        zoom:    vp ? undefined : 4,
+        popup:{ dockEnabled:true, dockOptions:{ breakpoint:false, position:"top-right" } }
+      });
+    }
+    buildWidgets();
+    const btn = $("btn3D");
+    btn.textContent = is3D ? "🗺️ 2D view" : "🧊 3D view";
+    btn.classList.toggle("mode-on", is3D);
+    if(announce){
+      toast(is3D
+        ? "3D on — real terrain, buildings, and 3D basemaps. Drag with the right mouse button (or two fingers) to tilt."
+        : "Back to flat 2D view.");
+    }
+  }
+
+  // static control handlers (reference the current widgets via closure)
+  $("measDist").addEventListener("click", ()=>{ if(measurement) measurement.activeTool="distance"; });
+  $("measArea").addEventListener("click", ()=>{ if(measurement) measurement.activeTool="area"; });
+  $("measClear").addEventListener("click", ()=>{ if(measurement) measurement.clear(); });
+  $("sketchClear").addEventListener("click", ()=>{
+    if(sketchLayer.graphics.length && confirm("Erase all your drawings?")) sketchLayer.removeAll();
+  });
+  $("coordOut").addEventListener("click", ()=>{
+    const txt = $("coordOut").textContent;
+    if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast("Coordinates copied"));
+  });
+
+  // start in 2D
+  setView("2d", false);
+
+
+  /* ---------- tool rail / panel switching ---------- */
+  const titles = { basemaps:"Basemap", add:"Add data", layers:"Layers", measure:"Measure",
+                   sketch:"Sketch", coords:"Coordinates", help:"Help" };
+  let currentPane = null;
+  function openPane(name){
+    if(currentPane===name){ closePanel(); return; }
+    currentPane = name;
+    $("panel").classList.add("open");
+    $("panelTitle").textContent = titles[name];
+    document.querySelectorAll(".pane").forEach(p=>p.classList.remove("active"));
+    $("pane-"+name).classList.add("active");
+    document.querySelectorAll(".tool").forEach(t=>t.classList.toggle("active", t.dataset.pane===name));
+  }
+  function closePanel(){
+    currentPane=null;
+    $("panel").classList.remove("open");
+    document.querySelectorAll(".tool").forEach(t=>t.classList.remove("active"));
+  }
+  document.querySelectorAll(".tool").forEach(t=>t.addEventListener("click", ()=>openPane(t.dataset.pane)));
+  $("panelClose").addEventListener("click", closePanel);
+
+  /* ---------- add public layers ---------- */
+  function addByPortalItem(id, title){
+    return Layer.fromPortalItem({ portalItem:new PortalItem({ id }) }).then(layer=>{
+      map.add(layer); registerLayer(layer);
+      layer.when(()=>{ if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{}); });
+      toast(`Added “${title||layer.title}”`);
+      openPane("layers");
+    });
+  }
+  function addByUrl(url){
+    return Layer.fromArcGISServerUrl({ url }).then(layer=>{
+      map.add(layer); registerLayer(layer);
+      layer.when(()=>{ if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{}); });
+      toast(`Added layer`); openPane("layers");
+    });
+  }
+
+  function searchLayers(){
+    const term = $("layerQuery").value.trim();
+    if(!term) return;
+    const box = $("layerResults");
+    box.innerHTML = `<p class="empty">Searching…</p>`;
+    const q = encodeURIComponent(`${term} (type:"Feature Service" OR type:"Map Service" OR type:"Feature Collection")`);
+    fetch(`https://www.arcgis.com/sharing/rest/search?q=${q}&f=json&num=12&sortField=numviews&sortOrder=desc`)
+      .then(r=>r.json())
+      .then(data=>{
+        box.innerHTML = "";
+        const items = (data.results||[]).filter(it=>it.access==="public");
+        if(!items.length){ box.innerHTML = `<p class="empty">No public layers found. Try another word.</p>`; return; }
+        items.forEach(it=>{
+          const card = document.createElement("div");
+          card.className="card";
+          card.innerHTML =
+            `<span class="tag">${it.type}</span>`+
+            `<h4>${escapeHtml(it.title)}</h4>`+
+            `<p class="meta">by ${escapeHtml(it.owner||"unknown")}${it.snippet?" · "+escapeHtml(it.snippet):""}</p>`+
+            `<button class="add">Add to map</button>`;
+          card.querySelector(".add").addEventListener("click", ()=>{
+            addByPortalItem(it.id, it.title).catch(()=>toast("Sorry — that layer couldn’t be added."));
+          });
+          box.appendChild(card);
+        });
+      })
+      .catch(()=>{ box.innerHTML = `<p class="empty">Search failed. Check your internet connection.</p>`; });
+  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+  $("layerSearchBtn").addEventListener("click", searchLayers);
+  $("layerQuery").addEventListener("keydown", e=>{ if(e.key==="Enter") searchLayers(); });
+  $("layerUrlBtn").addEventListener("click", ()=>{
+    const url = $("layerUrl").value.trim();
+    if(url) addByUrl(url).catch(()=>toast("Couldn’t add that URL.")), $("layerUrl").value="";
+  });
+
+  /* ---------- SAVE: build standard ArcGIS web map JSON ---------- */
+  const GEOM_TYPE = { point:"esriGeometryPoint", polyline:"esriGeometryPolyline",
+                      polygon:"esriGeometryPolygon", extent:"esriGeometryEnvelope",
+                      multipoint:"esriGeometryMultipoint" };
+
+  function sketchFeatureCollection(){
+    // group editable drawings (incl. uploaded data) by geometry type
+    const groups = {};
+    sketchLayer.graphics.forEach((g, idx)=>{
+      const t = g.geometry && g.geometry.type;
+      const et = GEOM_TYPE[t]; if(!et) return;
+      const grp = groups[et] || (groups[et] = { feats:[], keys:new Set() });
+      const attrs = Object.assign({}, g.attributes || {});
+      if(attrs.OBJECTID == null) attrs.OBJECTID = idx + 1;
+      Object.keys(attrs).forEach(k=>grp.keys.add(k));
+      grp.feats.push({ geometry:g.geometry.toJSON(), attributes:attrs,
+                       symbol: g.symbol ? g.symbol.toJSON() : null });
+    });
+    const subLayers = Object.keys(groups).map((et,i)=>{
+      const grp = groups[et];
+      const keys = Array.from(grp.keys);
+      if(keys.indexOf("OBJECTID")===-1) keys.unshift("OBJECTID");
+      const fields = keys.map(k=> k==="OBJECTID"
+        ? { name:"OBJECTID", type:"esriFieldTypeOID", alias:"OBJECTID" }
+        : { name:k, type:"esriFieldTypeString", alias:k });
+      return {
+        layerDefinition:{ name:"Drawings "+(i+1), geometryType:et, objectIdField:"OBJECTID", fields:fields },
+        featureSet:{ geometryType:et, spatialReference:view.spatialReference.toJSON(), features:grp.feats }
+      };
+    });
+    if(!subLayers.length) return null;
+    return {
+      id:"mapexplorer-drawings", title:"My drawings", layerType:"ArcGISFeatureLayer",
+      opacity:1, visibility:true, mapexplorerSketch:true,
+      featureCollection:{ layers:subLayers }
+    };
+  }
+
+  function operationalLayerJSON(layer){
+    const base = {
+      id: layer.id, title: layer.title || "Layer",
+      opacity: (layer.opacity==null?1:layer.opacity), visibility: layer.visible!==false
+    };
+    if(layer.portalItem && layer.portalItem.id) base.itemId = layer.portalItem.id;
+    if(layer.url) base.url = layer.url;
+    // best-effort standard layerType
+    const t = layer.type;
+    base.layerType = t==="feature" ? "ArcGISFeatureLayer"
+                   : t==="map-image" ? "ArcGISMapServiceLayer"
+                   : t==="tile" ? "ArcGISTiledMapServiceLayer"
+                   : t==="imagery" ? "ArcGISImageServiceLayer"
+                   : t==="vector-tile" ? "VectorTileLayer"
+                   : "ArcGISFeatureLayer";
+    return base;
+  }
+
+  function buildWebMap(title){
+    const ops = [];
+    addedLayers.forEach(l=>{ if(map.layers.includes(l)) ops.push(operationalLayerJSON(l)); });
+    const sk = sketchFeatureCollection(); if(sk) ops.push(sk);
+
+    let baseMapJSON;
+    try { baseMapJSON = map.basemap.toJSON(); } catch(e){ baseMapJSON = { title:map.basemap.id }; }
+
+    return {
+      operationalLayers: ops,
+      baseMap: baseMapJSON,
+      spatialReference: view.spatialReference.toJSON(),
+      authoringApp:"MapExplorerGIS", authoringAppVersion:"1.0", version:"2.30",
+      initialState:{ viewpoint:{ targetGeometry: view.extent.toJSON() } },
+      mapexplorerMeta:{ title: title || "My Map" }
+    };
+  }
+
+  function downloadMap(title){
+    const json = buildWebMap(title);
+    const blob = new Blob([JSON.stringify(json,null,2)], { type:"application/json" });
+    const a = document.createElement("a");
+    const safe = (title||"my-map").replace(/[^\w\- ]+/g,"").trim().replace(/\s+/g,"-").toLowerCase() || "my-map";
+    a.href = URL.createObjectURL(blob);
+    a.download = `${safe}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+    toast("Map saved to your computer");
+  }
+
+  /* ---------- OPEN: rebuild map from web map JSON ---------- */
+  function loadWebMap(json){
+    // basemap
+    if(json.baseMap){
+      try { map.basemap = Basemap.fromJSON(json.baseMap); }
+      catch(e){ if(json.baseMap.title) map.basemap = json.baseMap.title; }
+    }
+    // clear current operational layers, keep editable sketch layer
+    addedLayers.slice().forEach(l=>map.remove(l));
+    addedLayers.length = 0;
+    sketchLayer.removeAll();
+
+    const ops = json.operationalLayers || [];
+    const tasks = [];
+    ops.forEach(op=>{
+      if(op.mapexplorerSketch || op.mapfusionSketch || op.mapmakerSketch ||
+         (op.featureCollection && ["mapexplorer-drawings","mapfusion-drawings","mapmaker-drawings"].indexOf(op.id)>-1)){
+        // rebuild editable drawings (incl. uploaded data) with attributes + popups
+        (op.featureCollection.layers||[]).forEach(sub=>{
+          (sub.featureSet && sub.featureSet.features || []).forEach(f=>{
+            try{
+              const geom = geomJsonUtils.fromJSON(f.geometry);
+              const sym = f.symbol ? symbolJsonUtils.fromJSON(f.symbol) : null;
+              const attrs = f.attributes || {};
+              sketchLayer.add(new Graphic({ geometry:geom, symbol:sym, attributes:attrs, popupTemplate:makePopup(attrs) }));
+            }catch(e){}
+          });
+        });
+        return;
+      }
+      if(op.url){
+        tasks.push(Layer.fromArcGISServerUrl({ url:op.url }).then(layer=>{
+          applyOpProps(layer, op); map.add(layer); registerLayer(layer);
+        }).catch(()=>{}));
+      } else if(op.itemId){
+        tasks.push(Layer.fromPortalItem({ portalItem:new PortalItem({ id:op.itemId }) }).then(layer=>{
+          applyOpProps(layer, op); map.add(layer); registerLayer(layer);
+        }).catch(()=>{}));
+      }
+    });
+
+    Promise.all(tasks).then(()=>{
+      // restore viewpoint
+      try{
+        const g = json.initialState && json.initialState.viewpoint && json.initialState.viewpoint.targetGeometry;
+        if(g) view.goTo(Extent.fromJSON(g)).catch(()=>{});
+      }catch(e){}
+      const name = (json.mapexplorerMeta && json.mapexplorerMeta.title) || (json.mapfusionMeta && json.mapfusionMeta.title) || (json.mapmakerMeta && json.mapmakerMeta.title) || "map";
+      toast(`Opened “${name}”`);
+      openPane("layers");
+    });
+  }
+  function applyOpProps(layer, op){
+    if(op.title) layer.title = op.title;
+    if(op.opacity!=null) layer.opacity = op.opacity;
+    if(op.visibility!=null) layer.visible = op.visibility;
+  }
+
+  /* ---------- header buttons + modals ---------- */
+  $("btn3D").addEventListener("click", ()=>{ setView(is3D ? "2d" : "3d", true); });
+  $("btnOpen").addEventListener("click", ()=>$("fileInput").click());
+  $("fileInput").addEventListener("change", (e)=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ()=>{
+      try { loadWebMap(JSON.parse(reader.result)); }
+      catch(err){ toast("That file isn’t a valid map file."); }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  });
+
+  // save modal
+  $("btnSave").addEventListener("click", ()=>$("saveModal").classList.add("open"));
+  $("saveCancel").addEventListener("click", ()=>$("saveModal").classList.remove("open"));
+  $("saveConfirm").addEventListener("click", ()=>{
+    downloadMap($("mapTitle").value.trim());
+    $("saveModal").classList.remove("open");
+  });
+
+  // ---------- upload your own data (CSV / GeoJSON / GPX / KML) ----------
+  // Uploaded features are added to the editable sketch layer, so they save
+  // inside the web map's feature-collection ("sketch") structure.
+  const SYM = {
+    point:{ type:"simple-marker", style:"circle", color:[194,118,60,0.95], size:8, outline:{ color:[252,250,246], width:1.5 } },
+    line: { type:"simple-line", color:[194,118,60], width:2.5 },
+    poly: { type:"simple-fill", color:[194,118,60,0.22], outline:{ color:[194,118,60], width:2 } }
+  };
+
+  function makePopup(attrs){
+    const keys = Object.keys(attrs||{}).filter(k=>k!=="OBJECTID");
+    if(!keys.length) return null;
+    const nameKey = keys.find(k=>/^(name|title|label|place|site)$/i.test(k)) || keys.find(k=>/name|title|label/i.test(k));
+    return {
+      title: nameKey ? "{"+nameKey+"}" : "Feature",
+      content: [{ type:"fields", fieldInfos: keys.map(k=>({ fieldName:k, label:k })) }]
+    };
+  }
+
+  function pointGraphic(lon, lat, attrs){
+    return new Graphic({
+      geometry: new Point({ longitude:lon, latitude:lat }),
+      symbol: SYM.point, attributes:attrs||{}, popupTemplate: makePopup(attrs)
+    });
+  }
+
+  function detectDelim(text){
+    const line = (text.split(/\r?\n/)[0]) || "";
+    const c=(line.match(/,/g)||[]).length, t=(line.match(/\t/g)||[]).length, s=(line.match(/;/g)||[]).length;
+    if(t>=c && t>=s) return "\t";
+    if(s>c) return ";";
+    return ",";
+  }
+  function parseDelimited(text, delim){
+    const rows=[]; let field="", row=[], inQ=false, i=0;
+    while(i<text.length){
+      const ch=text[i];
+      if(inQ){
+        if(ch==='"'){ if(text[i+1]==='"'){ field+='"'; i+=2; continue; } inQ=false; i++; continue; }
+        field+=ch; i++; continue;
+      }
+      if(ch==='"'){ inQ=true; i++; continue; }
+      if(ch===delim){ row.push(field); field=""; i++; continue; }
+      if(ch==='\r'){ i++; continue; }
+      if(ch==='\n'){ row.push(field); rows.push(row); row=[]; field=""; i++; continue; }
+      field+=ch; i++;
+    }
+    if(field.length || row.length){ row.push(field); rows.push(row); }
+    return rows;
+  }
+  function addCSV(text){
+    const delim = detectDelim(text);
+    const rows = parseDelimited(text, delim).filter(r=>r.length && r.some(c=>c!==""));
+    if(rows.length < 2) throw new Error("empty");
+    const headers = rows.shift().map(h=>h.trim());
+    const low = headers.map(h=>h.toLowerCase());
+    const latNames=["latitude","lat","y","ycoord","y_coord","lat_dd"];
+    const lonNames=["longitude","lon","lng","long","x","xcoord","x_coord","lon_dd"];
+    const latIdx = low.findIndex(h=>latNames.indexOf(h)>-1);
+    const lonIdx = low.findIndex(h=>lonNames.indexOf(h)>-1);
+    if(latIdx<0 || lonIdx<0) throw new Error("Couldn’t find latitude/longitude columns. Name them “latitude” and “longitude”.");
+    const added=[];
+    rows.forEach(r=>{
+      const lat=parseFloat(r[latIdx]), lon=parseFloat(r[lonIdx]);
+      if(isNaN(lat)||isNaN(lon)||Math.abs(lat)>90||Math.abs(lon)>180) return;
+      const attrs={}; headers.forEach((h,idx)=>{ attrs[h||("col"+idx)] = (r[idx]!=null?r[idx]:""); });
+      const g=pointGraphic(lon,lat,attrs); sketchLayer.add(g); added.push(g);
+    });
+    return added;
+  }
+
+  function geomFromGeoJSON(geo){
+    if(!geo) return [];
+    const out=[];
+    const sr={ wkid:4326 };
+    switch(geo.type){
+      case "Point": out.push({ g:new Point({ longitude:geo.coordinates[0], latitude:geo.coordinates[1] }), s:SYM.point }); break;
+      case "MultiPoint": geo.coordinates.forEach(c=>out.push({ g:new Point({ longitude:c[0], latitude:c[1] }), s:SYM.point })); break;
+      case "LineString": out.push({ g:new Polyline({ paths:[geo.coordinates], spatialReference:sr }), s:SYM.line }); break;
+      case "MultiLineString": out.push({ g:new Polyline({ paths:geo.coordinates, spatialReference:sr }), s:SYM.line }); break;
+      case "Polygon": out.push({ g:new Polygon({ rings:geo.coordinates, spatialReference:sr }), s:SYM.poly }); break;
+      case "MultiPolygon": geo.coordinates.forEach(poly=>out.push({ g:new Polygon({ rings:poly, spatialReference:sr }), s:SYM.poly })); break;
+      case "GeometryCollection": (geo.geometries||[]).forEach(gg=>out.push.apply(out, geomFromGeoJSON(gg))); break;
+    }
+    return out;
+  }
+  function addGeoJSON(json){
+    const feats = json.type==="FeatureCollection" ? (json.features||[])
+                : json.type==="Feature" ? [json]
+                : [{ type:"Feature", geometry:json, properties:{} }];
+    const added=[];
+    feats.forEach(f=>{
+      const attrs = Object.assign({}, f.properties||{});
+      geomFromGeoJSON(f.geometry).forEach(part=>{
+        const g=new Graphic({ geometry:part.g, symbol:part.s, attributes:attrs, popupTemplate:makePopup(attrs) });
+        sketchLayer.add(g); added.push(g);
+      });
+    });
+    return added;
+  }
+
+  function addGPX(text){
+    const xml=new DOMParser().parseFromString(text,"application/xml");
+    if(xml.querySelector("parsererror")) throw new Error("bad xml");
+    const added=[];
+    const ll=(el)=>[parseFloat(el.getAttribute("lon")), parseFloat(el.getAttribute("lat"))];
+    xml.querySelectorAll("wpt").forEach(w=>{
+      const [lon,lat]=ll(w); if(isNaN(lat)) return;
+      const nm=(w.querySelector("name")||{}).textContent;
+      const g=pointGraphic(lon,lat,{ name:nm||"Waypoint" }); sketchLayer.add(g); added.push(g);
+    });
+    const seg=(pts)=>{
+      const path=[]; pts.forEach(p=>{ const [lon,lat]=ll(p); if(!isNaN(lat)) path.push([lon,lat]); });
+      if(path.length>1){
+        const g=new Graphic({ geometry:new Polyline({ paths:[path], spatialReference:{wkid:4326} }),
+                              symbol:SYM.line, attributes:{ name:"Track" }, popupTemplate:makePopup({name:"Track"}) });
+        sketchLayer.add(g); added.push(g);
+      }
+    };
+    xml.querySelectorAll("trkseg").forEach(s=>seg(Array.from(s.querySelectorAll("trkpt"))));
+    xml.querySelectorAll("rte").forEach(r=>seg(Array.from(r.querySelectorAll("rtept"))));
+    return added;
+  }
+
+  function parseKmlCoords(str){
+    return (str||"").trim().split(/\s+/).map(t=>{
+      const p=t.split(","); return [parseFloat(p[0]), parseFloat(p[1])];
+    }).filter(c=>!isNaN(c[0])&&!isNaN(c[1]));
+  }
+  function addKML(text){
+    const xml=new DOMParser().parseFromString(text,"application/xml");
+    if(xml.querySelector("parsererror")) throw new Error("bad xml");
+    const added=[];
+    xml.querySelectorAll("Placemark").forEach(pm=>{
+      const nm=(pm.querySelector("name")||{}).textContent || "Feature";
+      const attrs={ name:nm };
+      const pt=pm.querySelector("Point > coordinates");
+      const ls=pm.querySelector("LineString > coordinates");
+      const pg=pm.querySelector("Polygon coordinates");
+      if(pt){ const c=parseKmlCoords(pt.textContent)[0]; if(c){ const g=pointGraphic(c[0],c[1],attrs); sketchLayer.add(g); added.push(g);} }
+      else if(ls){ const c=parseKmlCoords(ls.textContent); if(c.length>1){ const g=new Graphic({ geometry:new Polyline({paths:[c],spatialReference:{wkid:4326}}), symbol:SYM.line, attributes:attrs, popupTemplate:makePopup(attrs) }); sketchLayer.add(g); added.push(g);} }
+      else if(pg){ const c=parseKmlCoords(pg.textContent); if(c.length>2){ const g=new Graphic({ geometry:new Polygon({rings:[c],spatialReference:{wkid:4326}}), symbol:SYM.poly, attributes:attrs, popupTemplate:makePopup(attrs) }); sketchLayer.add(g); added.push(g);} }
+    });
+    return added;
+  }
+
+  function handleDataFile(name, text){
+    const ext = (name.split(".").pop()||"").toLowerCase();
+    let added=[];
+    try{
+      if(ext==="csv"||ext==="tsv"||ext==="txt") added=addCSV(text);
+      else if(ext==="gpx") added=addGPX(text);
+      else if(ext==="kml") added=addKML(text);
+      else if(ext==="geojson"||ext==="json"){
+        const j=JSON.parse(text);
+        if(j.operationalLayers||j.baseMap){ toast("That looks like a saved map — use “Open map”."); return; }
+        added=addGeoJSON(j);
+      } else { toast("Unsupported file type."); return; }
+    }catch(e){ toast(e.message && /latitude/i.test(e.message) ? e.message : "Couldn’t read that file."); return; }
+    if(!added.length){ toast("No map points found in that file."); return; }
+    view.goTo(added).catch(()=>{});
+    toast(`Added ${added.length} feature${added.length>1?"s":""} to your drawings`);
+    openPane("sketch");
+  }
+
+  $("dataUploadBtn").addEventListener("click", ()=>$("dataFileInput").click());
+  $("dataFileInput").addEventListener("change", (e)=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=()=>handleDataFile(file.name, reader.result);
+    reader.readAsText(file);
+    e.target.value="";
+  });
+
+  // close modals on backdrop click
+  document.querySelectorAll(".modal-bg").forEach(bg=>{
+    bg.addEventListener("click", e=>{ if(e.target===bg) bg.classList.remove("open"); });
+  });
+
+  /* ---------- ready ---------- */
+  view.when(()=>{ openPane("basemaps"); });
+});
+</script>
+</body>
+</html>
