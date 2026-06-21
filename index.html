@@ -5,6 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <title>Map Explorer GIS</title>
 
+<!-- ===== TEMPORARY troubleshooting hook — delete this whole <script> block and the Debug button to remove ===== -->
+<script>
+(function(){
+  window.__MXLOG = window.__MXLOG || [];
+  function fmtArg(a){
+    if(a==null) return String(a);
+    if(typeof a==="string") return a;
+    if(a instanceof Error) return (a.message||a)+(a.stack?("\n  "+a.stack.split("\n").slice(0,3).join("\n  ")):"");
+    try{ return JSON.stringify(a); }catch(e){ try{ return String(a); }catch(_){ return "[unprintable]"; } }
+  }
+  function push(type, args){
+    try{
+      var msg = Array.prototype.map.call(args, fmtArg).join(" ");
+      var last = window.__MXLOG[window.__MXLOG.length-1];
+      if(last && last.type===type && last.msg===msg){ last.n=(last.n||1)+1; return; }
+      window.__MXLOG.push({ t:Date.now(), type:type, msg:msg });
+      if(window.__MXLOG.length>500) window.__MXLOG.shift();
+    }catch(e){}
+  }
+  window.__mxlog = function(m){ push("info", [m]); };
+  ["error","warn"].forEach(function(m){
+    var orig = console[m] ? console[m].bind(console) : function(){};
+    console[m] = function(){ push(m, arguments); orig.apply(console, arguments); };
+  });
+  window.addEventListener("error", function(e){
+    if(e && e.target && e.target!==window && (e.target.src||e.target.href)){
+      push("error", ["Failed to load resource: "+(e.target.src||e.target.href)]);
+    } else {
+      push("error", [((e&&e.message)||"Error")+" @ "+((e&&e.filename)||"")+":"+((e&&e.lineno)||"")]);
+    }
+  }, true);
+  window.addEventListener("unhandledrejection", function(e){
+    var r = e && e.reason; push("error", ["Unhandled promise rejection: "+((r&&(r.message||r))||r)]);
+  });
+})();
+</script>
+<!-- ===== end troubleshooting hook ===== -->
+
 <link rel="stylesheet" href="https://js.arcgis.com/4.30/esri/themes/light/main.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -67,6 +105,15 @@
   header button.primary:hover{background:var(--ink-950)}
   header button.mode-on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink-900)}
   header button.mode-on:hover{background:var(--accent-soft);filter:brightness(.97)}
+  /* TEMPORARY debug button — dashed to signal it's a temporary tool */
+  header button.temp-btn{border:1px dashed var(--accent);color:var(--accent);background:transparent}
+  header button.temp-btn:hover{background:var(--accent-soft)}
+  .modal.wide{width:min(720px,95vw)}
+  #debugOut{
+    font-family:var(--font-mono);font-size:11.5px;line-height:1.55;color:var(--ink-100);
+    background:var(--ink-950);border-radius:var(--radius-md);padding:14px;margin:0;
+    max-height:48vh;overflow:auto;white-space:pre-wrap;word-break:break-word;
+  }
 
   /* ---------- Body layout ---------- */
   #body{flex:1;display:flex;min-height:0}
@@ -208,6 +255,7 @@
     <div class="brand"><b>Map Explorer</b><span>GIS</span></div>
     <div class="spacer"></div>
     <button id="btn3D" title="Switch between flat (2D) and 3D">🧊 3D view</button>
+    <button id="btnDebug" class="temp-btn" title="Troubleshooting info (temporary)">🐞 Debug</button>
     <button id="btnOpen">📂 Open map</button>
     <button id="btnSave" class="primary">💾 Save map</button>
     <input type="file" id="fileInput" accept=".json,application/json" style="display:none" />
@@ -248,10 +296,6 @@
           </div>
           <div class="btn-row"><button class="btn" id="layerSearchBtn">Search ArcGIS Online</button></div>
           <div class="results" id="layerResults"></div>
-
-          <label class="field-label" for="layerUrl">Or paste a service URL</label>
-          <input type="text" id="layerUrl" placeholder="https://…/FeatureServer/0" />
-          <div class="btn-row"><button class="btn ghost" id="layerUrlBtn">Add from URL</button></div>
 
           <label class="field-label">Upload your own data</label>
           <p class="hint" style="margin:0 0 9px">A spreadsheet (CSV) with <b>latitude</b> and <b>longitude</b> columns, or a GeoJSON, GPX, or KML file. Your points and shapes are added to your drawings so you can style, edit, and save them.</p>
@@ -327,6 +371,21 @@
     <div class="btn-row">
       <button class="btn marker" id="saveConfirm">Download map file</button>
       <button class="btn ghost" id="saveCancel">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TEMPORARY debug modal — delete with the Debug button to remove ===== -->
+<div class="modal-bg" id="debugModal">
+  <div class="modal wide">
+    <h3>🐞 Troubleshooting info</h3>
+    <p>If something isn't working, press <b>Copy</b> and send this to your teacher or helper. This is a temporary tool.</p>
+    <pre id="debugOut">…</pre>
+    <div class="btn-row">
+      <button class="btn marker" id="debugCopy">📋 Copy</button>
+      <button class="btn ghost" id="debugRefresh">↻ Refresh</button>
+      <button class="btn ghost" id="debugClear">Clear log</button>
+      <button class="btn ghost" id="debugClose">Close</button>
     </div>
   </div>
 </div>
@@ -476,8 +535,8 @@ require([
     }
     // OpenStreetMap 3D Buildings (Esri Living Atlas, public)
     Layer.fromPortalItem({ portalItem:new PortalItem({ id:"ca0470dbbddb4db28bad74ed39949e25" }) })
-      .then(l=>{ l.title="3D Buildings (OpenStreetMap)"; l.listMode="show"; buildingsLayer=l; if(is3D) map.add(l); })
-      .catch(()=>{ /* buildings optional */ });
+      .then(l=>{ l.title="3D Buildings (OpenStreetMap)"; l.listMode="show"; buildingsLayer=l; if(is3D) map.add(l); window.__mxlog && window.__mxlog("OSM 3D buildings layer loaded"); })
+      .catch(e=>{ window.__mxlog && window.__mxlog("OSM 3D buildings failed to load: "+((e&&e.message)||e)); });
   }
   function remove3DContext(){
     if(buildingsLayer && map.layers.includes(buildingsLayer)) map.remove(buildingsLayer);
@@ -502,6 +561,7 @@ require([
       });
     }
     buildWidgets();
+    window.__mxlog && window.__mxlog("Switched to "+(is3D?"3D":"2D")+" view");
     const btn = $("btn3D");
     btn.textContent = is3D ? "🗺️ 2D view" : "🧊 3D view";
     btn.classList.toggle("mode-on", is3D);
@@ -558,13 +618,6 @@ require([
       openPane("layers");
     });
   }
-  function addByUrl(url){
-    return Layer.fromArcGISServerUrl({ url }).then(layer=>{
-      map.add(layer); registerLayer(layer);
-      layer.when(()=>{ if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{}); });
-      toast(`Added layer`); openPane("layers");
-    });
-  }
 
   function searchLayers(){
     const term = $("layerQuery").value.trim();
@@ -598,10 +651,6 @@ require([
 
   $("layerSearchBtn").addEventListener("click", searchLayers);
   $("layerQuery").addEventListener("keydown", e=>{ if(e.key==="Enter") searchLayers(); });
-  $("layerUrlBtn").addEventListener("click", ()=>{
-    const url = $("layerUrl").value.trim();
-    if(url) addByUrl(url).catch(()=>toast("Couldn’t add that URL.")), $("layerUrl").value="";
-  });
 
   /* ---------- SAVE: build standard ArcGIS web map JSON ---------- */
   const GEOM_TYPE = { point:"esriGeometryPoint", polyline:"esriGeometryPolyline",
@@ -749,6 +798,67 @@ require([
 
   /* ---------- header buttons + modals ---------- */
   $("btn3D").addEventListener("click", ()=>{ setView(is3D ? "2d" : "3d", true); });
+
+  /* ===== TEMPORARY troubleshooting tool ===== */
+  function webglInfo(){
+    try{
+      const c=document.createElement("canvas");
+      const gl=c.getContext("webgl2")||c.getContext("webgl");
+      if(!gl) return { ok:false };
+      const dbg=gl.getExtension("WEBGL_debug_renderer_info");
+      return { ok:true,
+        version: gl.getParameter(gl.VERSION),
+        renderer: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : "unknown" };
+    }catch(e){ return { ok:false, err:e.message }; }
+  }
+  function gatherDebug(){
+    const L=[]; const row=(k,v)=>L.push((k+":").padEnd(16)+" "+v);
+    L.push("=== Map Explorer — troubleshooting report ===");
+    row("Time", new Date().toString());
+    let sdk="?"; try{ sdk=(document.querySelector('script[src*="js.arcgis.com"]').src.match(/\/(\d+\.\d+)\//)||[])[1]||"?"; }catch(e){}
+    row("ArcGIS SDK", sdk);
+    row("Browser", navigator.userAgent);
+    row("Platform", navigator.platform||"?");
+    row("Language", navigator.language||"?");
+    row("Online", navigator.onLine);
+    row("Window", innerWidth+" x "+innerHeight+" @"+(window.devicePixelRatio||1)+"x");
+    row("Touch", ("ontouchstart" in window));
+    const gl=webglInfo();
+    row("WebGL / 3D", gl.ok ? (gl.version+" | "+gl.renderer) : "NOT AVAILABLE — 3D view will not work");
+    L.push("");
+    L.push("--- Map state ---");
+    row("Mode", is3D ? "3D (SceneView)" : "2D (MapView)");
+    row("View ready", !!(view && view.ready));
+    try{ row("Center lat/lng", view && view.center ? (view.center.latitude.toFixed(5)+", "+view.center.longitude.toFixed(5)) : "?"); }catch(e){}
+    try{ row("Zoom", (view && view.zoom!=null) ? view.zoom : "?"); }catch(e){}
+    try{ row("Scale", (view && view.scale) ? ("1:"+Math.round(view.scale).toLocaleString()) : "?"); }catch(e){}
+    try{ row("Basemap", (map.basemap && (map.basemap.title||map.basemap.id)) || "?"); }catch(e){}
+    try{ row("Terrain", (map.ground && map.ground.layers && map.ground.layers.length) ? "world-elevation" : "(flat)"); }catch(e){}
+    row("Added layers", addedLayers.length);
+    try{ row("Layer titles", addedLayers.map(l=>l.title).join(", ") || "(none)"); }catch(e){}
+    try{ row("Drawings", sketchLayer.graphics.length); }catch(e){}
+    row("3D buildings", buildingsLayer ? (map.layers.includes(buildingsLayer) ? "loaded & shown" : "loaded, hidden") : "(not loaded)");
+    L.push("");
+    const log = (window.__MXLOG||[]);
+    L.push("--- Errors & messages ("+log.length+") ---");
+    if(!log.length) L.push("(none captured — that's good!)");
+    log.slice(-150).forEach(e=>{
+      const ts=new Date(e.t).toLocaleTimeString();
+      L.push("["+ts+"] "+e.type.toUpperCase()+": "+e.msg+(e.n>1?(" (x"+e.n+")"):""));
+    });
+    return L.join("\n");
+  }
+  function openDebug(){ $("debugOut").textContent = gatherDebug(); $("debugModal").classList.add("open"); }
+  $("btnDebug").addEventListener("click", openDebug);
+  $("debugRefresh").addEventListener("click", ()=>{ $("debugOut").textContent = gatherDebug(); });
+  $("debugClose").addEventListener("click", ()=>$("debugModal").classList.remove("open"));
+  $("debugClear").addEventListener("click", ()=>{ if(window.__MXLOG) window.__MXLOG.length=0; $("debugOut").textContent = gatherDebug(); toast("Log cleared"); });
+  $("debugCopy").addEventListener("click", ()=>{
+    const txt=$("debugOut").textContent;
+    if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast("Copied — paste it to your teacher")).catch(()=>toast("Couldn't copy — select the text manually"));
+    else toast("Select the text and copy manually");
+  });
+  /* ===== end troubleshooting tool ===== */
   $("btnOpen").addEventListener("click", ()=>$("fileInput").click());
   $("fileInput").addEventListener("change", (e)=>{
     const file = e.target.files[0]; if(!file) return;
