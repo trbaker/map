@@ -537,7 +537,7 @@ require([
   "esri/widgets/Search","esri/widgets/Measurement",
   "esri/widgets/Sketch","esri/widgets/CoordinateConversion","esri/widgets/CoordinateConversion/support/Conversion","esri/widgets/LayerList",
   "esri/widgets/Home","esri/widgets/ScaleBar","esri/widgets/Locate",
-  "esri/layers/GraphicsLayer","esri/layers/Layer",
+  "esri/layers/GraphicsLayer","esri/layers/Layer","esri/layers/VectorTileLayer","esri/layers/WebTileLayer",
   "esri/portal/PortalItem","esri/geometry/Point","esri/geometry/Polyline","esri/geometry/Polygon","esri/geometry/Extent","esri/Graphic",
   "esri/geometry/support/jsonUtils","esri/symbols/support/jsonUtils","esri/config"
 ], function(
@@ -546,7 +546,7 @@ require([
   Search, Measurement,
   Sketch, CoordinateConversion, Conversion, LayerList,
   Home, ScaleBar, Locate,
-  GraphicsLayer, Layer,
+  GraphicsLayer, Layer, VectorTileLayer, WebTileLayer,
   PortalItem, Point, Polyline, Polygon, Extent, Graphic,
   geomJsonUtils, symbolJsonUtils, esriConfig
 ){
@@ -642,7 +642,8 @@ require([
     up:     '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10l4-4 4 4"/></svg>',
     down:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6l4 4 4-4"/></svg>',
     trash:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.6 9a1 1 0 0 0 1 1h4.8a1 1 0 0 0 1-1L12 4"/></svg>',
-    opacity:'<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor" stroke="none"/></svg>'
+    opacity:'<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor" stroke="none"/></svg>',
+    info:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4" stroke-linecap="round"/><circle cx="8" cy="5" r="0.6" fill="currentColor" stroke="none"/></svg>'
   };
   function llActBtn(svg, title, fn, danger){
     const b = document.createElement("button");
@@ -689,6 +690,13 @@ require([
         if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{});
         else toast("This layer doesn't have a location yet.");
       }));
+      // item details on ArcGIS Online (only for layers backed by a portal item)
+      const itemId = layer.portalItem && layer.portalItem.id;
+      if(itemId){
+        acts.appendChild(llActBtn(LL_ICON.info, "Item details (opens ArcGIS Online)", ()=>{
+          window.open(`https://www.arcgis.com/home/item.html?id=${itemId}`, "_blank", "noopener");
+        }));
+      }
       // transparency: toggles a slider (0% = solid, 100% = invisible)
       const opWrap = document.createElement("div"); opWrap.className = "ll-opacity";
       const startT = Math.round((1 - (layer.opacity==null?1:layer.opacity)) * 100);
@@ -1195,22 +1203,38 @@ require([
     };
   }
 
+  function layerTypeFor(t){
+    return t==="feature" ? "ArcGISFeatureLayer"
+         : t==="map-image" ? "ArcGISMapServiceLayer"
+         : t==="tile" ? "ArcGISTiledMapServiceLayer"
+         : t==="imagery" ? "ArcGISImageServiceLayer"
+         : t==="imagery-tile" ? "ArcGISTiledImageServiceLayer"
+         : t==="vector-tile" ? "VectorTileLayer"
+         : t==="web-tile" ? "WebTiledLayer"
+         : t==="wms" ? "WMS"
+         : t==="wmts" ? "WebTiledLayer"
+         : t==="geojson" ? "GeoJSON"
+         : t==="csv" ? "CSV"
+         : "ArcGISFeatureLayer";
+  }
   function operationalLayerJSON(layer){
-    const base = {
-      id: layer.id, title: layer.title || "Layer",
-      opacity: (layer.opacity==null?1:layer.opacity), visibility: layer.visible!==false
-    };
-    if(layer.portalItem && layer.portalItem.id) base.itemId = layer.portalItem.id;
-    if(layer.url) base.url = layer.url;
-    // best-effort standard layerType
-    const t = layer.type;
-    base.layerType = t==="feature" ? "ArcGISFeatureLayer"
-                   : t==="map-image" ? "ArcGISMapServiceLayer"
-                   : t==="tile" ? "ArcGISTiledMapServiceLayer"
-                   : t==="imagery" ? "ArcGISImageServiceLayer"
-                   : t==="vector-tile" ? "VectorTileLayer"
-                   : "ArcGISFeatureLayer";
-    return base;
+    // Start from the layer's own web-map-spec JSON so the service reference
+    // (url / styleUrl / templateUrl / itemId) and layerType are captured correctly.
+    let json;
+    try { json = layer.toJSON(); } catch(e){ json = null; }
+    if(!json || typeof json !== "object") json = {};
+    // overlay the live state
+    json.id = layer.id || json.id;
+    json.title = layer.title || json.title || "Layer";
+    json.opacity = (layer.opacity==null ? (json.opacity==null?1:json.opacity) : layer.opacity);
+    json.visibility = (layer.visible!==false);
+    // guarantee SOME by-reference pointer exists, even if toJSON() omitted it
+    if(!json.url && layer.url) json.url = layer.url;
+    if(!json.itemId && layer.portalItem && layer.portalItem.id) json.itemId = layer.portalItem.id;
+    if(!json.styleUrl && layer.styleUrl) json.styleUrl = layer.styleUrl;
+    if(!json.templateUrl && layer.urlTemplate) json.templateUrl = layer.urlTemplate;
+    if(!json.layerType) json.layerType = layerTypeFor(layer.type);
+    return json;
   }
 
   function buildWebMap(title){
@@ -1274,7 +1298,24 @@ require([
         });
         return;
       }
+      // vector tile layers reference by styleUrl (or a vector tile service url)
+      if(op.layerType==="VectorTileLayer" || op.styleUrl){
+        const u = op.styleUrl || op.url;
+        if(u){
+          try{ const l = new VectorTileLayer({ url:u }); applyOpProps(l, op); map.add(l); registerLayer(l); }catch(e){}
+        }
+        return;
+      }
+      // web tile layers reference by templateUrl
+      if(op.layerType==="WebTiledLayer" || op.templateUrl){
+        const tpl = op.templateUrl || op.urlTemplate;
+        if(tpl){
+          try{ const l = new WebTileLayer({ urlTemplate:tpl }); applyOpProps(l, op); map.add(l); registerLayer(l); }catch(e){}
+        }
+        return;
+      }
       if(op.url){
+        // handles ArcGIS feature / tiled map / image / map-image services by reference
         tasks.push(Layer.fromArcGISServerUrl({ url:op.url }).then(layer=>{
           applyOpProps(layer, op); map.add(layer); registerLayer(layer);
         }).catch(()=>{}));
