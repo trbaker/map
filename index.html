@@ -427,7 +427,7 @@
 
         <!-- Sketch -->
         <div class="pane" id="pane-sketch">
-          <p class="hint">Draw points, lines, and shapes right on the map. Pick a color first, then draw. To recolor a shape, select it, then pick a new color.</p>
+          <p class="hint">Pick a color, then draw points, lines, and shapes with the tools below — or add a text label. To recolor something, select it, then pick a new color.</p>
           <label class="field-label">Drawing color</label>
           <div class="swatch-row" id="colorSwatches">
             <button class="swatch-btn" data-color="#E23B3B" title="Red" style="background:#E23B3B"></button>
@@ -445,8 +445,12 @@
             <label for="customColor">Custom color</label>
             <input type="color" id="customColor" value="#2D72D9" />
           </div>
+          <label class="field-label">Draw points, lines &amp; shapes</label>
           <div id="sketchHost" class="widget-host"></div>
-          <div class="btn-row"><button class="btn ghost" id="sketchClear">Erase all drawings</button></div>
+          <div class="btn-row">
+            <button class="btn ghost" id="addTextBtn">✎ Add text</button>
+            <button class="btn ghost" id="sketchClear">Erase all</button>
+          </div>
         </div>
 
         <!-- Place -->
@@ -723,10 +727,37 @@ require([
       poly: { type:"simple-fill", color:c.concat(0.30), outline:{ color:c, width:2 } }
     };
   }
+  function textSymbol(hex, text){
+    return { type:"text", text:text, color:hex, haloColor:[255,255,255,0.9], haloSize:1.4,
+             font:{ size:14, weight:"bold", family:"sans-serif" } };
+  }
   function recolorGraphic(g, hex){
     if(!g || !g.geometry) return;
+    const sym = g.symbol;
+    if(sym && sym.type === "text"){            // keep the label, just change its color
+      const clone = sym.clone(); clone.color = hex; g.symbol = clone; return;
+    }
     const s = sketchSymbols(hex), t = g.geometry.type;
     g.symbol = (t==="point"||t==="multipoint") ? s.point : (t==="polyline") ? s.line : s.poly;
+  }
+  // text tool: type a label, then click the map to place it (in the current color)
+  let textClickHandle = null;
+  function armTextTool(){
+    if(!view) return;
+    const txt = prompt("Type your text label:");
+    if(txt == null) return;
+    const t = txt.trim(); if(!t) return;
+    try{ if(sketch) sketch.cancel(); }catch(e){}
+    if(textClickHandle){ try{ textClickHandle.remove(); }catch(e){} textClickHandle = null; }
+    toast("Now click the map to place your text.");
+    textClickHandle = view.on("click", (evt)=>{
+      if(evt.stopPropagation) evt.stopPropagation();
+      const pt = evt.mapPoint;
+      if(textClickHandle){ textClickHandle.remove(); textClickHandle = null; }
+      if(!pt) return;
+      sketchLayer.add(new Graphic({ geometry:pt, symbol: textSymbol(currentSketchColor, t) }));
+      toast("Text added. Use the Sketch select tool to move it.");
+    });
   }
   function applySketchColor(hex, fromUser){
     currentSketchColor = hex;
@@ -831,6 +862,7 @@ require([
     try{ if(pointerHandle) pointerHandle.remove(); }catch(e){}
     try{ if(scaleHandle) scaleHandle.remove(); }catch(e){}
     try{ if(placeClickHandle) placeClickHandle.remove(); }catch(e){}
+    try{ if(textClickHandle){ textClickHandle.remove(); textClickHandle=null; } }catch(e){}
     if(view){
       try{ view.map = null; }catch(e){}      // detach: destroying a view also destroys its map/layers
       try{ view.container = null; }catch(e){}
@@ -944,6 +976,7 @@ require([
     b.addEventListener("click", ()=>applySketchColor(b.dataset.color, true));
   });
   $("customColor").addEventListener("input", (e)=>applySketchColor(e.target.value, true));
+  $("addTextBtn").addEventListener("click", armTextTool);
   $("coordOut").addEventListener("click", ()=>{
     const txt = $("coordOut").textContent;
     if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast("Coordinates copied"));
@@ -1073,14 +1106,36 @@ require([
   }
   function openWebMapItem(id, title){
     toast(`Opening “${title}”…`);
+    // (optional, future) read a worksheet our app may have stored in the item data
     fetch(`https://www.arcgis.com/sharing/rest/content/items/${id}/data?f=json`)
       .then(r=>r.json())
-      .then(json=>{
-        if(!json || (!json.operationalLayers && !json.baseMap)){ toast("That map couldn’t be read."); return; }
-        loadWebMap(json);
-        closePanel();
-      })
-      .catch(()=>toast("Couldn’t open that map."));
+      .then(j=>{ currentWorksheet = (j && j.mapexplorerMeta && j.mapexplorerMeta.worksheet) || null;
+                 if($("learnPanel").classList.contains("open")) renderLearn(); })
+      .catch(()=>{});
+    // Load the full web map with the SDK so every operational layer (renderers,
+    // popups, group layers, hosted layers) is built correctly, then move its
+    // basemap + layers into our shared map.
+    const wm = new WebMap({ portalItem: { id: id } });
+    wm.loadAll().then(()=>{
+      if(wm.basemap){ try{ map.basemap = wm.basemap.clone(); }catch(e){ map.basemap = wm.basemap; } }
+      addedLayers.slice().forEach(l=>map.remove(l));   // clear previous operational layers
+      addedLayers.length = 0;
+      sketchLayer.removeAll();
+      const layers = wm.layers.toArray();
+      wm.layers.removeAll();                            // detach from the temp web map
+      layers.forEach(l=>{ map.add(l); registerLayer(l); });
+      if(map.layers.includes(placeLayer)) map.layers.reorder(placeLayer, map.layers.length-1);
+      // go to the map's saved viewpoint, else frame the first layer
+      const vp = wm.initialViewProperties && wm.initialViewProperties.viewpoint;
+      if(vp){ view.goTo(vp).catch(()=>{}); }
+      else { const l0 = layers.find(l=>l.fullExtent); if(l0) view.goTo(l0.fullExtent).catch(()=>{}); }
+      if(window.__mxlog) window.__mxlog(`Opened web map “${title}” — ${layers.length} layer(s)`);
+      toast(`Opened “${title}”`);
+      openPane("layers");
+    }).catch((e)=>{
+      toast("Couldn’t open that map.");
+      if(window.__mxlog) window.__mxlog("WebMap open failed: "+((e&&e.message)||e));
+    });
   }
   $("webmapSearchBtn").addEventListener("click", searchWebMaps);
   $("webmapQuery").addEventListener("keydown", e=>{ if(e.key==="Enter") searchWebMaps(); });
