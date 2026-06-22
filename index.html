@@ -211,6 +211,8 @@
     border-radius:var(--radius-sm);cursor:pointer;color:var(--ink-600);display:flex;align-items:center;justify-content:center;padding:0;
     transition:background .12s ease,color .12s ease,border-color .12s ease}
   .ll-act:hover{background:var(--ink-50);color:var(--ink-900);border-color:var(--ink-300)}
+  .ll-act.is-disabled,.ll-act:disabled{opacity:.4;cursor:not-allowed;color:var(--text-mute);background:var(--ink-50);border-color:var(--border)}
+  .ll-act.is-disabled:hover,.ll-act:disabled:hover{background:var(--ink-50);color:var(--text-mute);border-color:var(--border)}
   .ll-act.danger:hover{background:#d9534f;color:#fff;border-color:#d9534f}
   .ll-icon{width:15px;height:15px;display:block}
   .ll-opacity{display:none;align-items:center;gap:10px;margin-top:9px}
@@ -404,7 +406,7 @@
 
           <label class="field-label">1. Add your own data</label>
           <p class="hint" style="margin:0 0 9px">A spreadsheet (CSV) with <b>latitude</b> and <b>longitude</b> columns, or a GeoJSON, GPX, or KML file. Your points and shapes are added to your drawings so you can style, edit, and save them.</p>
-          <button class="btn ghost" id="dataUploadBtn">📁 Choose a data file…</button>
+          <button class="btn" id="dataUploadBtn">📁 Choose a data file…</button>
           <input type="file" id="dataFileInput" accept=".csv,.tsv,.txt,.geojson,.json,.gpx,.kml" style="display:none" />
 
           <label class="field-label" for="layerQuery">2. Add data from ArcGIS Online</label>
@@ -567,7 +569,7 @@ require([
   }
 
   /* ---------- map (shared by 2D + 3D) ---------- */
-  const sketchLayer = new GraphicsLayer({ title:"My drawings", listMode:"show" });
+  const sketchLayer = new GraphicsLayer({ title:"Sketch layer", listMode:"show" });
   const placeLayer = new GraphicsLayer({ listMode:"hide" }); // pin dropped by the Place tool
   const map = new Map({ basemap:"topo-vector", layers:[sketchLayer, placeLayer], ground:"world-elevation" });
 
@@ -704,18 +706,14 @@ require([
           window.open(`https://www.arcgis.com/home/item.html?id=${itemId}`, "_blank", "noopener");
         }));
       }
-      // transparency: toggles a slider (0% = solid, 100% = invisible)
+      // transparency button — currently disabled (inactive / grayed out)
       const opWrap = document.createElement("div"); opWrap.className = "ll-opacity";
       const startT = Math.round((1 - (layer.opacity==null?1:layer.opacity)) * 100);
       opWrap.innerHTML = `<input type="range" min="0" max="100" step="1" value="${startT}" aria-label="Transparency">`+
                          `<span class="ll-opval">${startT}% transparent</span>`;
-      const slider = opWrap.querySelector("input"), opVal = opWrap.querySelector(".ll-opval");
-      slider.addEventListener("input", ()=>{
-        const t = +slider.value;
-        layer.opacity = 1 - t/100;
-        opVal.textContent = `${t}% transparent`;
-      });
-      acts.appendChild(llActBtn(LL_ICON.opacity, "Transparency", ()=>{ opWrap.classList.toggle("open"); }));
+      const opBtn = llActBtn(LL_ICON.opacity, "Transparency (unavailable)", ()=>{});
+      opBtn.disabled = true; opBtn.classList.add("is-disabled");
+      acts.appendChild(opBtn);
       acts.appendChild(llActBtn(LL_ICON.up,   "Move up",   ()=>moveLayer(layer, +1)));
       acts.appendChild(llActBtn(LL_ICON.down, "Move down", ()=>moveLayer(layer, -1)));
       if(layer !== sketchLayer){ // your drawings layer isn't removable (erase from the Sketch panel)
@@ -1237,7 +1235,7 @@ require([
     });
     if(!subLayers.length) return null;
     return {
-      id:"mapexplorer-drawings", title:"My drawings", layerType:"ArcGISFeatureLayer",
+      id:"mapexplorer-drawings", title:"Sketch layer", layerType:"ArcGISFeatureLayer",
       opacity:1, visibility:true, mapexplorerSketch:true,
       featureCollection:{ layers:subLayers }
     };
