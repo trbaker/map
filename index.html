@@ -191,6 +191,39 @@
   .widget-host{margin-top:8px}
   .esri-basemap-gallery{background:transparent}
 
+  /* basemap thumbnail grid */
+  .bm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px}
+  .bm-tile{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius-md);
+    overflow:hidden;background:var(--surface);cursor:pointer;padding:0;text-align:left;
+    box-shadow:var(--shadow-sm);transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease}
+  .bm-tile:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
+  .bm-tile.active{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent)}
+  .bm-thumb{display:block;height:64px;width:100%;
+    background:linear-gradient(135deg,var(--ink-200),var(--ink-100));background-size:cover;background-position:center}
+  .bm-label{display:block;padding:7px 9px;font-size:var(--text-xs);font-weight:600;color:var(--ink-900);
+    border-top:1px solid var(--border-soft)}
+
+  /* sketch color picker */
+  .swatch-row{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:4px}
+  .swatch-btn{width:30px;height:30px;border-radius:var(--radius-full);border:2px solid var(--surface);
+    box-shadow:0 0 0 1px var(--border);cursor:pointer;padding:0;transition:transform .12s ease,box-shadow .12s ease}
+  .swatch-btn:hover{transform:scale(1.08)}
+  .swatch-btn.active{box-shadow:0 0 0 2px var(--ink-900);transform:scale(1.08)}
+  .custom-color{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:var(--text-xs);color:var(--text-soft)}
+  .custom-color input[type=color]{width:44px;height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);
+    background:var(--surface);cursor:pointer;padding:2px}
+
+  /* place info card */
+  .place-info{margin-top:14px;border:1px solid var(--border);border-radius:var(--radius-lg);
+    background:var(--surface);padding:13px 14px;box-shadow:var(--shadow-sm)}
+  .place-info .pi-name{font-family:var(--font-display);font-weight:600;font-size:var(--text-base);color:var(--ink-900);line-height:1.2}
+  .place-info .pi-sub{font-size:var(--text-xs);color:var(--text-mute);margin-top:4px;line-height:1.45}
+  .place-info .pi-rows{margin-top:11px;display:flex;flex-direction:column;gap:7px}
+  .place-info .pi-rows > div{display:flex;justify-content:space-between;gap:12px;font-size:var(--text-xs);align-items:baseline}
+  .place-info .pi-rows span{color:var(--text-mute);white-space:nowrap}
+  .place-info .pi-rows b{color:var(--ink-900);font-family:var(--font-mono);font-weight:600;text-align:right}
+  .place-info .pi-hint{font-size:var(--text-xs);color:var(--text-mute);font-style:italic;line-height:1.45}
+
   /* Help list */
   .help-item{display:flex;gap:11px;margin-bottom:13px}
   .help-item .k{font-size:18px;width:24px;text-align:center;flex:0 0 24px}
@@ -266,10 +299,10 @@
     <nav id="rail">
       <button class="tool" data-pane="basemaps"><span class="ico">🗺️</span>Basemap</button>
       <button class="tool" data-pane="add"><span class="ico">➕</span>Add data</button>
-      <button class="tool" data-pane="layers"><span class="ico">📋</span>Layers</button>
+      <button class="tool" data-pane="layers"><span class="ico">📋</span>Layer list</button>
       <button class="tool" data-pane="measure"><span class="ico">📏</span>Measure</button>
       <button class="tool" data-pane="sketch"><span class="ico">✏️</span>Sketch</button>
-      <button class="tool" data-pane="coords"><span class="ico">📍</span>Coords</button>
+      <button class="tool" data-pane="coords"><span class="ico">📍</span>Place</button>
       <button class="tool" data-pane="help"><span class="ico">❓</span>Help</button>
     </nav>
 
@@ -283,8 +316,8 @@
 
         <!-- Basemaps -->
         <div class="pane" id="pane-basemaps">
-          <p class="hint">Pick the background map your map sits on. Imagery shows photos from space; Topographic shows roads and land features.</p>
-          <div id="basemapHost" class="widget-host"></div>
+          <p class="hint">Pick the background map your map sits on. Tap a thumbnail to load it. Imagery shows photos from space; Topographic shows roads and land features.</p>
+          <div id="basemapGrid" class="bm-grid"></div>
         </div>
 
         <!-- Add data -->
@@ -322,15 +355,35 @@
 
         <!-- Sketch -->
         <div class="pane" id="pane-sketch">
-          <p class="hint">Draw points, lines, and shapes right on the map. Use the tools below to add, move, and delete your drawings.</p>
+          <p class="hint">Draw points, lines, and shapes right on the map. Pick a color first, then draw. To recolor a shape, select it, then pick a new color.</p>
+          <label class="field-label">Drawing color</label>
+          <div class="swatch-row" id="colorSwatches">
+            <button class="swatch-btn" data-color="#E23B3B" title="Red" style="background:#E23B3B"></button>
+            <button class="swatch-btn" data-color="#E8743B" title="Orange" style="background:#E8743B"></button>
+            <button class="swatch-btn" data-color="#F2C53D" title="Yellow" style="background:#F2C53D"></button>
+            <button class="swatch-btn" data-color="#3FA34D" title="Green" style="background:#3FA34D"></button>
+            <button class="swatch-btn" data-color="#2BB3A3" title="Teal" style="background:#2BB3A3"></button>
+            <button class="swatch-btn" data-color="#2D72D9" title="Blue" style="background:#2D72D9"></button>
+            <button class="swatch-btn" data-color="#7C4DD1" title="Purple" style="background:#7C4DD1"></button>
+            <button class="swatch-btn" data-color="#E255A1" title="Pink" style="background:#E255A1"></button>
+            <button class="swatch-btn" data-color="#2A2622" title="Black" style="background:#2A2622"></button>
+            <button class="swatch-btn" data-color="#FFFFFF" title="White" style="background:#FFFFFF"></button>
+          </div>
+          <div class="custom-color">
+            <label for="customColor">Custom color</label>
+            <input type="color" id="customColor" value="#2D72D9" />
+          </div>
           <div id="sketchHost" class="widget-host"></div>
           <div class="btn-row"><button class="btn ghost" id="sketchClear">Erase all drawings</button></div>
         </div>
 
-        <!-- Coordinates -->
+        <!-- Place -->
         <div class="pane" id="pane-coords">
-          <p class="hint">See latitude and longitude. Move your mouse over the map to read coordinates, click the map to lock one in, or type coordinates to jump there.</p>
+          <p class="hint">Click anywhere on the map to drop a pin. The latitude and longitude lock in place until you click somewhere else. You can also type coordinates below to jump there.</p>
           <div id="coordHost" class="widget-host"></div>
+          <div id="placeInfo" class="place-info">
+            <div class="pi-hint">Click the map to see the nearest place name, coordinates, and elevation.</div>
+          </div>
         </div>
 
         <!-- Help -->
@@ -341,7 +394,7 @@
           <div class="help-item"><span class="k">📋</span><span class="t"><b>Layers</b> — show, hide, reorder, or remove your layers.</span></div>
           <div class="help-item"><span class="k">📏</span><span class="t"><b>Measure</b> — find how long or how big something is.</span></div>
           <div class="help-item"><span class="k">✏️</span><span class="t"><b>Sketch</b> — draw your own points, lines, and shapes.</span></div>
-          <div class="help-item"><span class="k">📍</span><span class="t"><b>Coords</b> — read and enter latitude/longitude.</span></div>
+          <div class="help-item"><span class="k">📍</span><span class="t"><b>Place</b> — click the map to drop a pin and see its place name, latitude/longitude, and elevation.</span></div>
           <div class="help-item"><span class="k">🔍</span><span class="t"><b>Search</b> (top of map) — find a place or address.</span></div>
           <div class="help-item"><span class="k">💾</span><span class="t"><b>Save / Open</b> — save your map as a file, then open it again later. The file follows the ArcGIS web map format, so it also works in ArcGIS Online.</span></div>
         </div>
@@ -395,7 +448,7 @@ require([
   "esri/Map","esri/views/MapView","esri/views/SceneView","esri/WebMap","esri/Basemap",
   "esri/widgets/BasemapGallery","esri/widgets/BasemapGallery/support/LocalBasemapsSource",
   "esri/widgets/Search","esri/widgets/Measurement",
-  "esri/widgets/Sketch","esri/widgets/CoordinateConversion","esri/widgets/LayerList",
+  "esri/widgets/Sketch","esri/widgets/CoordinateConversion","esri/widgets/CoordinateConversion/support/Conversion","esri/widgets/LayerList",
   "esri/widgets/Home","esri/widgets/ScaleBar","esri/widgets/Locate",
   "esri/layers/GraphicsLayer","esri/layers/Layer",
   "esri/portal/PortalItem","esri/geometry/Point","esri/geometry/Polyline","esri/geometry/Polygon","esri/geometry/Extent","esri/Graphic",
@@ -404,7 +457,7 @@ require([
   Map, MapView, SceneView, WebMap, Basemap,
   BasemapGallery, LocalBasemapsSource,
   Search, Measurement,
-  Sketch, CoordinateConversion, LayerList,
+  Sketch, CoordinateConversion, Conversion, LayerList,
   Home, ScaleBar, Locate,
   GraphicsLayer, Layer,
   PortalItem, Point, Polyline, Polygon, Extent, Graphic,
@@ -424,7 +477,8 @@ require([
 
   /* ---------- map (shared by 2D + 3D) ---------- */
   const sketchLayer = new GraphicsLayer({ title:"My drawings", listMode:"show" });
-  const map = new Map({ basemap:"topo-vector", layers:[sketchLayer], ground:"world-elevation" });
+  const placeLayer = new GraphicsLayer({ listMode:"hide" }); // pin dropped by the Place tool
+  const map = new Map({ basemap:"topo-vector", layers:[sketchLayer, placeLayer], ground:"world-elevation" });
 
   // track only the layers students add (so save stays clean)
   const addedLayers = [];
@@ -457,26 +511,144 @@ require([
   };
 
   /* ---------- curated basemaps: a different set in 3D mode ---------- */
-  const BASEMAPS_2D = ["topo-vector","streets-vector","satellite","hybrid","gray-vector","dark-gray-vector","oceans","national-geographic","osm","terrain"];
-  const BASEMAPS_3D = ["hybrid","satellite","topo-vector","terrain","national-geographic","streets-night-vector","oceans"];
-  function basemapSource(ids){
-    return new LocalBasemapsSource({ basemaps: ids.map(id=>Basemap.fromId(id)) });
+  const BASEMAPS_2D = ["topo-vector","streets-vector","satellite","hybrid","gray-vector","dark-gray-vector","oceans","streets-navigation-vector","osm","terrain"];
+  const BASEMAPS_3D = ["hybrid","satellite","topo-vector","terrain","streets-night-vector","streets-vector","oceans"];
+  const BM_LABELS = {
+    "topo-vector":"Topographic", "streets-vector":"Streets", "satellite":"Imagery",
+    "hybrid":"Imagery Hybrid", "gray-vector":"Light Gray", "dark-gray-vector":"Dark Gray",
+    "oceans":"Oceans", "streets-navigation-vector":"Navigation", "osm":"OpenStreetMap",
+    "terrain":"Terrain", "streets-night-vector":"Streets at Night"
+  };
+  let currentBasemapId = "topo-vector";
+  // build the clickable thumbnail grid for the current mode's basemap set
+  function renderBasemapGrid(){
+    const grid = $("basemapGrid"); if(!grid) return;
+    const ids = is3D ? BASEMAPS_3D : BASEMAPS_2D;
+    grid.innerHTML = "";
+    ids.forEach(id=>{
+      const bm = Basemap.fromId(id);
+      if(!bm) return;
+      const tile = document.createElement("button");
+      tile.className = "bm-tile" + (id===currentBasemapId ? " active" : "");
+      tile.dataset.id = id;
+      tile.innerHTML = `<span class="bm-thumb"></span><span class="bm-label">${BM_LABELS[id]||id}</span>`;
+      const thumb = tile.querySelector(".bm-thumb");
+      bm.loadAll().then(()=>{
+        const t = (bm.portalItem && bm.portalItem.thumbnailUrl) || bm.thumbnailUrl;
+        if(t) thumb.style.backgroundImage = `url("${t}")`;
+      }).catch(()=>{});
+      tile.addEventListener("click", ()=>{
+        map.basemap = bm;
+        currentBasemapId = id;
+        grid.querySelectorAll(".bm-tile").forEach(x=>x.classList.toggle("active", x.dataset.id===id));
+        if(window.__mxlog) window.__mxlog("Basemap set to "+id);
+      });
+      grid.appendChild(tile);
+    });
   }
 
   /* ---------- view + widgets (rebuilt when switching 2D <-> 3D) ---------- */
   let view = null, is3D = false, buildingsLayer = null;
-  let search, basemapGallery, layerList, measurement, sketch, coordWidget;
-  let homeW, locateW, scaleBar, pointerHandle, scaleHandle;
+  let search, layerList, measurement, sketch, coordWidget;
+  let homeW, locateW, scaleBar, pointerHandle, scaleHandle, placeClickHandle;
 
   function fmt(n){ return n.toFixed(5); }
 
+  /* ---------- sketch drawing color ---------- */
+  let currentSketchColor = "#2D72D9";
+  let selectedSketchGraphics = [];
+  function hexToRgb(hex){
+    hex = String(hex).replace("#","");
+    if(hex.length===3) hex = hex.split("").map(c=>c+c).join("");
+    const n = parseInt(hex,16);
+    return [(n>>16)&255, (n>>8)&255, n&255];
+  }
+  function sketchSymbols(hex){
+    const c = hexToRgb(hex);
+    return {
+      point:{ type:"simple-marker", style:"circle", color:c.concat(1), size:9,
+              outline:{ color:[42,38,34,0.85], width:1.25 } },
+      line: { type:"simple-line", color:c, width:3 },
+      poly: { type:"simple-fill", color:c.concat(0.30), outline:{ color:c, width:2 } }
+    };
+  }
+  function recolorGraphic(g, hex){
+    if(!g || !g.geometry) return;
+    const s = sketchSymbols(hex), t = g.geometry.type;
+    g.symbol = (t==="point"||t==="multipoint") ? s.point : (t==="polyline") ? s.line : s.poly;
+  }
+  function applySketchColor(hex, fromUser){
+    currentSketchColor = hex;
+    if(sketch){
+      const s = sketchSymbols(hex);
+      sketch.pointSymbol = s.point;
+      sketch.polylineSymbol = s.line;
+      sketch.polygonSymbol = s.poly;
+    }
+    if(fromUser && selectedSketchGraphics.length){
+      selectedSketchGraphics.forEach(g=>recolorGraphic(g, hex));
+    }
+    // reflect active swatch
+    document.querySelectorAll("#colorSwatches .swatch-btn").forEach(b=>{
+      b.classList.toggle("active", (b.dataset.color||"").toLowerCase()===hex.toLowerCase());
+    });
+    const cc = $("customColor"); if(cc) cc.value = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : cc.value;
+  }
+
+  /* ---------- Place tool: pin + nearest place name + elevation ---------- */
+  const PLACE_PIN = { type:"simple-marker", style:"circle", color:[226,59,59,1], size:12,
+                      outline:{ color:[255,255,255], width:2 } };
+  let placeReqId = 0;
+  function piRow(label, val){ return `<div><span>${label}</span><b>${val}</b></div>`; }
+  function describePlace(lat, lon, mapPoint){
+    placeLayer.removeAll();
+    placeLayer.add(new Graphic({ geometry: mapPoint || new Point({ longitude:lon, latitude:lat }), symbol: PLACE_PIN }));
+    const myId = ++placeReqId;
+    $("placeInfo").innerHTML =
+      `<div class="pi-name">Dropped pin</div>`+
+      `<div class="pi-rows">${piRow("Latitude", lat.toFixed(5))}${piRow("Longitude", lon.toFixed(5))}</div>`+
+      `<div class="pi-hint" style="margin-top:10px">Looking up place name…</div>`;
+    // free, fast, no-key sources: OpenStreetMap (reverse geocode) + Open-Meteo (elevation)
+    const geoP  = fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&addressdetails=1&lat=${lat}&lon=${lon}`)
+                    .then(r=>r.json()).catch(()=>null);
+    const elevP = fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`)
+                    .then(r=>r.json()).then(d=>Array.isArray(d.elevation)?d.elevation[0]:null).catch(()=>null);
+    Promise.all([geoP, elevP]).then(([geo, elev])=>{
+      if(myId !== placeReqId) return;   // a newer click already happened
+      renderPlace(lat, lon, geo, elev);
+    });
+    if(window.__mxlog) window.__mxlog(`Place clicked: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+  }
+  function renderPlace(lat, lon, geo, elev){
+    let title = "Dropped pin", sub = "";
+    if(geo && !geo.error){
+      const a = geo.address || {};
+      const local = a.city||a.town||a.village||a.hamlet||a.suburb||a.neighbourhood||a.county;
+      title = geo.name || (geo.display_name ? geo.display_name.split(",")[0] : null) || local || "Dropped pin";
+      sub = geo.display_name || [local, a.state, a.country].filter(Boolean).join(", ");
+    }
+    const rows = [ piRow("Latitude", lat.toFixed(5)), piRow("Longitude", lon.toFixed(5)) ];
+    if(elev!=null && !isNaN(elev)) rows.push(piRow("Elevation", `${Math.round(elev)} m (${Math.round(elev*3.28084)} ft)`));
+    if(geo && geo.category && geo.type) rows.push(piRow("Type", `${geo.category} · ${geo.type}`));
+    $("placeInfo").innerHTML =
+      `<div class="pi-name">${escapeHtml(title)}</div>`+
+      (sub ? `<div class="pi-sub">${escapeHtml(sub)}</div>` : "")+
+      `<div class="pi-rows">${rows.join("")}</div>`;
+  }
+
   function destroyActiveView(){
-    [search,basemapGallery,layerList,measurement,sketch,coordWidget,homeW,locateW,scaleBar]
+    [search,layerList,measurement,sketch,coordWidget,homeW,locateW,scaleBar]
       .forEach(w=>{ try{ if(w) w.destroy(); }catch(e){} });
-    search=basemapGallery=layerList=measurement=sketch=coordWidget=homeW=locateW=scaleBar=null;
+    search=layerList=measurement=sketch=coordWidget=homeW=locateW=scaleBar=null;
     try{ if(pointerHandle) pointerHandle.remove(); }catch(e){}
     try{ if(scaleHandle) scaleHandle.remove(); }catch(e){}
-    if(view){ try{ view.destroy(); }catch(e){} view=null; }
+    try{ if(placeClickHandle) placeClickHandle.remove(); }catch(e){}
+    if(view){
+      try{ view.map = null; }catch(e){}      // detach: destroying a view also destroys its map/layers
+      try{ view.container = null; }catch(e){}
+      try{ view.destroy(); }catch(e){}
+      view=null;
+    }
   }
 
   function buildWidgets(){
@@ -489,7 +661,7 @@ require([
     scaleBar = new ScaleBar({ view, unit:"dual" }); view.ui.add(scaleBar, "bottom-right");
 
     // panel widgets
-    basemapGallery = new BasemapGallery({ view, container:"basemapHost", source: basemapSource(is3D?BASEMAPS_3D:BASEMAPS_2D) });
+    renderBasemapGrid(); // clickable basemap thumbnails for this mode
 
     layerList = new LayerList({
       view, container:"layerListHost",
@@ -516,7 +688,30 @@ require([
     measurement = new Measurement({ view, container:"measureHost" });
     sketch = new Sketch({ view, layer:sketchLayer, container:"sketchHost",
       creationMode:"update", visibleElements:{ settingsMenu:false } });
-    coordWidget = new CoordinateConversion({ view, container:"coordHost" });
+    applySketchColor(currentSketchColor, false); // new drawings use the chosen color
+    sketch.on("update", (e)=>{
+      selectedSketchGraphics = (e.state==="start" || e.state==="active") ? (e.graphics || []) : [];
+    });
+    sketch.on("create", (e)=>{ if(e.state==="complete") selectedSketchGraphics = []; });
+    coordWidget = new CoordinateConversion({ view, container:"coordHost", mode:"capture" });
+    coordWidget.when(()=>{
+      // dropdown should offer only DD and DMS
+      const dd  = coordWidget.formats.find(f=>f.name==="dd");
+      const dms = coordWidget.formats.find(f=>f.name==="dms");
+      const keep = [dd, dms].filter(Boolean);
+      coordWidget.formats.removeAll();
+      coordWidget.formats.addMany(keep);
+      coordWidget.conversions.removeAll();
+      if(dd)  coordWidget.conversions.add(new Conversion({ format: dd }));
+      if(dms) coordWidget.conversions.add(new Conversion({ format: dms }));
+    }).catch(()=>{});
+
+    // Place tool: click to drop a pin, freeze coords, look up place name + elevation
+    placeClickHandle = view.on("click", (evt)=>{
+      if(currentPane !== "coords") return;          // only when the Place panel is open
+      const pt = evt.mapPoint; if(!pt) return;
+      describePlace(pt.latitude, pt.longitude, pt);
+    });
 
     // live footer readout
     pointerHandle = view.on("pointer-move", (evt)=>{
@@ -579,6 +774,10 @@ require([
   $("sketchClear").addEventListener("click", ()=>{
     if(sketchLayer.graphics.length && confirm("Erase all your drawings?")) sketchLayer.removeAll();
   });
+  document.querySelectorAll("#colorSwatches .swatch-btn").forEach(b=>{
+    b.addEventListener("click", ()=>applySketchColor(b.dataset.color, true));
+  });
+  $("customColor").addEventListener("input", (e)=>applySketchColor(e.target.value, true));
   $("coordOut").addEventListener("click", ()=>{
     const txt = $("coordOut").textContent;
     if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast("Coordinates copied"));
@@ -589,8 +788,8 @@ require([
 
 
   /* ---------- tool rail / panel switching ---------- */
-  const titles = { basemaps:"Basemap", add:"Add data", layers:"Layers", measure:"Measure",
-                   sketch:"Sketch", coords:"Coordinates", help:"Help" };
+  const titles = { basemaps:"Basemap", add:"Add data", layers:"Layer list", measure:"Measure",
+                   sketch:"Sketch", coords:"Place", help:"Help" };
   let currentPane = null;
   function openPane(name){
     if(currentPane===name){ closePanel(); return; }
@@ -744,6 +943,7 @@ require([
     if(json.baseMap){
       try { map.basemap = Basemap.fromJSON(json.baseMap); }
       catch(e){ if(json.baseMap.title) map.basemap = json.baseMap.title; }
+      currentBasemapId = null; renderBasemapGrid();
     }
     // clear current operational layers, keep editable sketch layer
     addedLayers.slice().forEach(l=>map.remove(l));
