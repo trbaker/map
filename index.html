@@ -211,6 +211,10 @@
   .ll-act:hover{background:var(--ink-50);color:var(--ink-900);border-color:var(--ink-300)}
   .ll-act.danger:hover{background:#d9534f;color:#fff;border-color:#d9534f}
   .ll-icon{width:15px;height:15px;display:block}
+  .ll-opacity{display:none;align-items:center;gap:10px;margin-top:9px}
+  .ll-opacity.open{display:flex}
+  .ll-opacity input[type=range]{flex:1;min-width:0;accent-color:var(--accent);cursor:pointer}
+  .ll-opval{font-size:var(--text-xs);color:var(--text-mute);font-family:var(--font-mono);white-space:nowrap}
   .ll-empty{font-size:var(--text-xs);color:var(--text-mute);font-style:italic}
   .empty{font-size:var(--text-sm);color:var(--text-mute);font-style:italic;padding:8px 0}
 
@@ -637,7 +641,8 @@ require([
     zoom:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14M7 5v4M5 7h4"/></svg>',
     up:     '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10l4-4 4 4"/></svg>',
     down:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6l4 4 4-4"/></svg>',
-    trash:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.6 9a1 1 0 0 0 1 1h4.8a1 1 0 0 0 1-1L12 4"/></svg>'
+    trash:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.6 9a1 1 0 0 0 1 1h4.8a1 1 0 0 0 1-1L12 4"/></svg>',
+    opacity:'<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor" stroke="none"/></svg>'
   };
   function llActBtn(svg, title, fn, danger){
     const b = document.createElement("button");
@@ -684,6 +689,18 @@ require([
         if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{});
         else toast("This layer doesn't have a location yet.");
       }));
+      // transparency: toggles a slider (0% = solid, 100% = invisible)
+      const opWrap = document.createElement("div"); opWrap.className = "ll-opacity";
+      const startT = Math.round((1 - (layer.opacity==null?1:layer.opacity)) * 100);
+      opWrap.innerHTML = `<input type="range" min="0" max="100" step="1" value="${startT}" aria-label="Transparency">`+
+                         `<span class="ll-opval">${startT}% transparent</span>`;
+      const slider = opWrap.querySelector("input"), opVal = opWrap.querySelector(".ll-opval");
+      slider.addEventListener("input", ()=>{
+        const t = +slider.value;
+        layer.opacity = 1 - t/100;
+        opVal.textContent = `${t}% transparent`;
+      });
+      acts.appendChild(llActBtn(LL_ICON.opacity, "Transparency", ()=>{ opWrap.classList.toggle("open"); }));
       acts.appendChild(llActBtn(LL_ICON.up,   "Move up",   ()=>moveLayer(layer, +1)));
       acts.appendChild(llActBtn(LL_ICON.down, "Move down", ()=>moveLayer(layer, -1)));
       if(layer !== sketchLayer){ // your drawings layer isn't removable (erase from the Sketch panel)
@@ -694,7 +711,7 @@ require([
         }, true));
       }
 
-      body.appendChild(name); body.appendChild(acts);
+      body.appendChild(name); body.appendChild(acts); body.appendChild(opWrap);
       item.appendChild(vis); item.appendChild(body);
       box.appendChild(item);
     });
