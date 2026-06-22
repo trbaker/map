@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Map Explorer GIS</title>
+<title>Map Explorer</title>
 
 <!-- ===== TEMPORARY troubleshooting hook — delete this whole <script> block and the Debug button to remove ===== -->
 <script>
@@ -91,6 +91,8 @@
   .brand{display:flex;align-items:baseline;gap:8px;font-family:var(--font-display)}
   .brand b{font-size:var(--text-xl);font-weight:700;letter-spacing:-.02em;color:var(--ink-950)}
   .brand span{font-size:var(--text-xs);font-weight:600;color:var(--text-mute);letter-spacing:.16em;text-transform:uppercase}
+  .brand .map-title{font-size:var(--text-base);font-weight:500;color:var(--text-soft);letter-spacing:normal;text-transform:none;
+    max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .spacer{flex:1}
   header button{
     font-family:var(--font-body);font-size:var(--text-xs);font-weight:600;
@@ -333,7 +335,7 @@
 
   @media (max-width:720px){
     :root{--panel-w:288px}
-    .brand span{display:none}
+    .brand .map-title{max-width:34vw}
     .tool{width:46px;height:46px}
     header button span.lbltxt{display:none}
   }
@@ -345,7 +347,7 @@
 <body>
 <div id="app">
   <header>
-    <div class="brand"><b>Map Explorer</b><span>GIS</span></div>
+    <div class="brand"><b>Map Explorer</b><span id="mapTitleLabel" class="map-title"></span></div>
     <div class="spacer"></div>
     <button id="btn3D" title="Switch between flat (2D) and 3D">🧊 3D view</button>
     <button id="btnLearn" title="Open the lesson worksheet for this map">📖 Learn</button>
@@ -358,12 +360,12 @@
     <!-- Tool rail -->
     <nav id="rail">
       <button class="tool" data-pane="open"><span class="ico">📂</span>Open</button>
+      <button class="tool" data-pane="sketch"><span class="ico">✏️</span>Sketch</button>
       <button class="tool" data-pane="basemaps"><span class="ico">🗺️</span>Basemap</button>
       <button class="tool" data-pane="add"><span class="ico">➕</span>Add data</button>
       <button class="tool" data-pane="layers"><span class="ico">📋</span>Layer list</button>
-      <button class="tool" data-pane="measure"><span class="ico">📏</span>Measure</button>
-      <button class="tool" data-pane="sketch"><span class="ico">✏️</span>Sketch</button>
       <button class="tool" data-pane="coords"><span class="ico">📍</span>Place</button>
+      <button class="tool" data-pane="measure"><span class="ico">📏</span>Measure</button>
       <button class="tool" data-pane="help"><span class="ico">❓</span>Help</button>
     </nav>
 
@@ -377,17 +379,17 @@
 
         <!-- Open -->
         <div class="pane" id="pane-open">
-          <p class="hint">Open a ready-made map, or open a map you saved before.</p>
+          <p class="hint">Open a map you saved before, or open one from ArcGIS Online.</p>
 
-          <label class="field-label">1. School gallery (ArcGIS Online)</label>
-          <p class="hint" style="margin:0 0 8px">Maps shared for students. Search, or leave blank to see them all.</p>
-          <input type="search" id="webmapQuery" placeholder="Search the gallery…" />
-          <div class="btn-row"><button class="btn" id="webmapSearchBtn">Show gallery maps</button></div>
-          <div class="results" id="webmapResults"></div>
-
-          <label class="field-label">2. Your own map</label>
+          <label class="field-label">1. Your own map</label>
           <p class="hint" style="margin:0 0 8px">Open a Map Explorer file (<b>.json</b>) you saved earlier.</p>
           <button class="btn ghost" id="openFileBtn">📁 Open a .json map file…</button>
+
+          <label class="field-label">2. ArcGIS Online maps</label>
+          <p class="hint" style="margin:0 0 8px">Search, or leave blank to see the available maps.</p>
+          <input type="search" id="webmapQuery" placeholder="Search ArcGIS Online…" />
+          <div class="btn-row"><button class="btn" id="webmapSearchBtn">Show maps</button></div>
+          <div class="results" id="webmapResults"></div>
         </div>
 
         <!-- Basemaps -->
@@ -398,18 +400,20 @@
 
         <!-- Add data -->
         <div class="pane" id="pane-add">
-          <p class="hint">Search ArcGIS Online for free public layers — try “rivers”, “earthquakes”, “national parks”, or “population”. ★ Featured layers picked for school show up first. Then press Add.</p>
-          <label class="field-label" for="layerQuery">Search public layers</label>
+          <p class="hint">Bring in your own data, or search ArcGIS Online for free public layers.</p>
+
+          <label class="field-label">1. Add your own data</label>
+          <p class="hint" style="margin:0 0 9px">A spreadsheet (CSV) with <b>latitude</b> and <b>longitude</b> columns, or a GeoJSON, GPX, or KML file. Your points and shapes are added to your drawings so you can style, edit, and save them.</p>
+          <button class="btn ghost" id="dataUploadBtn">📁 Choose a data file…</button>
+          <input type="file" id="dataFileInput" accept=".csv,.tsv,.txt,.geojson,.json,.gpx,.kml" style="display:none" />
+
+          <label class="field-label" for="layerQuery">2. Add data from ArcGIS Online</label>
+          <p class="hint" style="margin:0 0 9px">Search free public layers — try “rivers”, “earthquakes”, “national parks”, or “population”. ★ Featured layers show up first.</p>
           <div class="row">
             <input type="search" id="layerQuery" placeholder="e.g. earthquakes" />
           </div>
           <div class="btn-row"><button class="btn" id="layerSearchBtn">Search ArcGIS Online</button></div>
           <div class="results" id="layerResults"></div>
-
-          <label class="field-label">Upload your own data</label>
-          <p class="hint" style="margin:0 0 9px">A spreadsheet (CSV) with <b>latitude</b> and <b>longitude</b> columns, or a GeoJSON, GPX, or KML file. Your points and shapes are added to your drawings so you can style, edit, and save them.</p>
-          <button class="btn ghost" id="dataUploadBtn">📁 Choose a data file…</button>
-          <input type="file" id="dataFileInput" accept=".csv,.tsv,.txt,.geojson,.json,.gpx,.kml" style="display:none" />
         </div>
 
         <!-- Layers -->
@@ -538,7 +542,7 @@ require([
   "esri/widgets/Sketch","esri/widgets/CoordinateConversion","esri/widgets/CoordinateConversion/support/Conversion","esri/widgets/LayerList",
   "esri/widgets/Home","esri/widgets/ScaleBar","esri/widgets/Locate",
   "esri/layers/GraphicsLayer","esri/layers/Layer","esri/layers/VectorTileLayer","esri/layers/WebTileLayer",
-  "esri/portal/PortalItem","esri/geometry/Point","esri/geometry/Polyline","esri/geometry/Polygon","esri/geometry/Extent","esri/Graphic",
+  "esri/portal/PortalItem","esri/geometry/Point","esri/geometry/Polyline","esri/geometry/Polygon","esri/geometry/Extent","esri/Graphic","esri/Viewpoint","esri/Camera",
   "esri/geometry/support/jsonUtils","esri/symbols/support/jsonUtils","esri/config"
 ], function(
   Map, MapView, SceneView, WebMap, Basemap,
@@ -547,7 +551,7 @@ require([
   Sketch, CoordinateConversion, Conversion, LayerList,
   Home, ScaleBar, Locate,
   GraphicsLayer, Layer, VectorTileLayer, WebTileLayer,
-  PortalItem, Point, Polyline, Polygon, Extent, Graphic,
+  PortalItem, Point, Polyline, Polygon, Extent, Graphic, Viewpoint, Camera,
   geomJsonUtils, symbolJsonUtils, esriConfig
 ){
   "use strict";
@@ -663,6 +667,9 @@ require([
     const box = $("layerListCustom"); if(!box) return;
     // top of the list = top of the map; hide internal layers (e.g. the place pin)
     const layers = map.layers.toArray().filter(l=>l.listMode!=="hide").reverse();
+    // "My drawings" always sits at the top of the list
+    const si = layers.indexOf(sketchLayer);
+    if(si > 0){ layers.splice(si, 1); layers.unshift(sketchLayer); }
     box.innerHTML = "";
     if(!layers.length){ box.innerHTML = `<p class="ll-empty">No layers yet. Add data, draw something, or pick a basemap.</p>`; return; }
     layers.forEach(layer=>{
@@ -856,6 +863,29 @@ require([
       if(geo.category && geo.type) rows.push(piRow("Feature", escapeHtml(geo.category+" · "+geo.type)));
     }
     if(elev!=null && !isNaN(elev)) rows.push(piRow("Elevation", `${Math.round(elev)} m (${Math.round(elev*3.28084)} ft)`));
+    // current local time + time zone of the clicked location (from Open-Meteo timezone=auto)
+    if(wx && (wx.timezone || wx.utc_offset_seconds!=null)){
+      const tz = wx.timezone;
+      let timeStr = "";
+      try{
+        timeStr = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday:"short", hour:"numeric", minute:"2-digit", hour12:true }).format(new Date());
+      }catch(e){
+        if(wx.utc_offset_seconds!=null){
+          const d = new Date(Date.now() + wx.utc_offset_seconds*1000);
+          let h=d.getUTCHours(); const m=d.getUTCMinutes(), ap=h>=12?"PM":"AM"; h=h%12||12;
+          timeStr = `${h}:${String(m).padStart(2,"0")} ${ap}`;
+        }
+      }
+      if(timeStr) rows.push(piRow("Local time", escapeHtml(timeStr)));
+      const parts = [];
+      if(wx.timezone_abbreviation) parts.push(wx.timezone_abbreviation);
+      if(wx.utc_offset_seconds!=null){
+        const off=wx.utc_offset_seconds/3600, sign=off>=0?"+":"−", ah=Math.floor(Math.abs(off)), am=Math.round((Math.abs(off)-ah)*60);
+        parts.push("UTC"+sign+ah+(am?(":"+String(am).padStart(2,"0")):""));
+      }
+      const zoneLabel = (tz||"") + (parts.length ? ((tz?" · ":"")+parts.join(", ")) : "");
+      if(zoneLabel) rows.push(piRow("Time zone", escapeHtml(zoneLabel)));
+    }
     if(wx && wx.current){
       const cur = wx.current, dly = wx.daily || {};
       const cond = WX_CODE[cur.weather_code] || "—";
@@ -1040,8 +1070,15 @@ require([
   /* ---------- add public layers ---------- */
   function addByPortalItem(id, title){
     return Layer.fromPortalItem({ portalItem:new PortalItem({ id }) }).then(layer=>{
+      if(title) layer.title = title;                 // use the real item name in the layer list
       map.add(layer); registerLayer(layer);
-      layer.when(()=>{ if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{}); });
+      layer.when(()=>{
+        if(!layer.title || layer.title === "Layer"){ // fallback to the loaded portal-item name
+          layer.title = (layer.portalItem && layer.portalItem.title) || title || "Layer";
+        }
+        renderLayerList();                            // refresh the list now the name is known
+        if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{});
+      });
       toast(`Added “${title||layer.title}”`);
       openPane("layers");
     });
@@ -1054,7 +1091,9 @@ require([
     const badge = it._featured
       ? `<span class="tag feat">★ Featured</span>`
       : `<span class="tag">${escapeHtml(it.type)}</span>`;
+    const thumb = it.thumbnail ? `https://www.arcgis.com/sharing/rest/content/items/${it.id}/info/${it.thumbnail}` : "";
     card.innerHTML =
+      (thumb ? `<span class="wm-thumb" style="background-image:url('${thumb}')"></span>` : "") +
       badge +
       `<h4>${escapeHtml(it.title)}</h4>`+
       `<p class="meta">by ${escapeHtml(it.owner||"unknown")}${it.snippet?" · "+escapeHtml(it.snippet):""}</p>`+
@@ -1104,17 +1143,17 @@ require([
   $("layerSearchBtn").addEventListener("click", searchLayers);
   $("layerQuery").addEventListener("keydown", e=>{ if(e.key==="Enter") searchLayers(); });
 
-  /* ---------- Open a web map from the school gallery (ArcGIS Online) ---------- */
+  /* ---------- Open a web map from ArcGIS Online ---------- */
   function searchWebMaps(){
     const term = $("webmapQuery").value.trim();
     const box = $("webmapResults");
-    box.innerHTML = `<p class="empty">Loading gallery…</p>`;
+    box.innerHTML = `<p class="empty">Loading maps…</p>`;
     const q = encodeURIComponent(`${term} type:"Web Map"`.trim());
     const url = `https://www.arcgis.com/sharing/rest/content/groups/${FEATURED_GROUP}/search?q=${q}&f=json&num=24&sortField=title&sortOrder=asc`;
     fetch(url).then(r=>r.json()).then(data=>{
       box.innerHTML = "";
       const items = (data.results || []);
-      if(!items.length){ box.innerHTML = `<p class="empty">No maps found in the gallery.</p>`; return; }
+      if(!items.length){ box.innerHTML = `<p class="empty">No maps found.</p>`; return; }
       items.forEach(it=>{
         const card = document.createElement("div");
         card.className = "card";
@@ -1127,7 +1166,7 @@ require([
         card.querySelector(".add").addEventListener("click", ()=>openWebMapItem(it.id, it.title));
         box.appendChild(card);
       });
-    }).catch(()=>{ box.innerHTML = `<p class="empty">Couldn’t reach the gallery. Check your connection.</p>`; });
+    }).catch(()=>{ box.innerHTML = `<p class="empty">Couldn’t reach ArcGIS Online. Check your connection.</p>`; });
   }
   function openWebMapItem(id, title){
     toast(`Opening “${title}”…`);
@@ -1155,6 +1194,7 @@ require([
       if(vp){ view.goTo(vp).catch(()=>{}); }
       else { const l0 = layers.find(l=>l.fullExtent); if(l0) view.goTo(l0.fullExtent).catch(()=>{}); }
       if(window.__mxlog) window.__mxlog(`Opened web map “${title}” — ${layers.length} layer(s)`);
+      setMapTitle(title);
       toast(`Opened “${title}”`);
       openPane("layers");
     }).catch((e)=>{
@@ -1238,20 +1278,41 @@ require([
   }
 
   function buildWebMap(title){
+    const safeJSON = (fn)=>{ try{ return fn(); }catch(e){ return null; } };
     const ops = [];
-    addedLayers.forEach(l=>{ if(map.layers.includes(l)) ops.push(operationalLayerJSON(l)); });
+    // save operational layers in their on-screen DRAW order (bottom → top)
+    map.layers.forEach(l=>{ if(addedLayers.indexOf(l) > -1) ops.push(operationalLayerJSON(l)); });
     const sk = sketchFeatureCollection(); if(sk) ops.push(sk);
 
     let baseMapJSON;
     try { baseMapJSON = map.basemap.toJSON(); } catch(e){ baseMapJSON = { title:map.basemap.id }; }
+
+    const vpJSON     = safeJSON(()=> view.viewpoint ? view.viewpoint.toJSON() : null);
+    const centerJSON = safeJSON(()=> view.center ? view.center.toJSON() : null);
+    const extentJSON = safeJSON(()=> view.extent ? view.extent.toJSON() : null);
+    const cameraJSON = safeJSON(()=> (is3D && view.camera) ? view.camera.toJSON() : null);
 
     return {
       operationalLayers: ops,
       baseMap: baseMapJSON,
       spatialReference: view.spatialReference.toJSON(),
       authoringApp:"MapExplorerGIS", authoringAppVersion:"1.0", version:"2.30",
-      initialState:{ viewpoint:{ targetGeometry: view.extent.toJSON() } },
-      mapexplorerMeta:{ title: title || "My Map" }
+      // standard web map field — full viewpoint (center + scale + rotation) when available
+      initialState:{ viewpoint: vpJSON || { targetGeometry: extentJSON } },
+      mapexplorerMeta:{
+        title: title || "My Map",
+        is3D: !!is3D,
+        view: {
+          center:   centerJSON,                                  // center point at save time
+          extent:   extentJSON,                                  // full extent at save time
+          scale:    safeJSON(()=> view.scale!=null ? view.scale : null),
+          zoom:     safeJSON(()=> view.zoom!=null  ? view.zoom  : null),
+          rotation: safeJSON(()=> view.rotation!=null ? view.rotation : 0),
+          viewpoint: vpJSON,
+          camera:   cameraJSON                                   // 3D camera (heading/tilt) when in 3D
+        },
+        worksheet: currentWorksheet || undefined
+      }
     };
   }
 
@@ -1327,12 +1388,10 @@ require([
     });
 
     Promise.all(tasks).then(()=>{
-      // restore viewpoint
-      try{
-        const g = json.initialState && json.initialState.viewpoint && json.initialState.viewpoint.targetGeometry;
-        if(g) view.goTo(Extent.fromJSON(g)).catch(()=>{});
-      }catch(e){}
+      restoreViewState(json);
       const name = (json.mapexplorerMeta && json.mapexplorerMeta.title) || (json.mapfusionMeta && json.mapfusionMeta.title) || (json.mapmakerMeta && json.mapmakerMeta.title) || "map";
+      const realTitle = (json.mapexplorerMeta && json.mapexplorerMeta.title) || (json.mapfusionMeta && json.mapfusionMeta.title) || (json.mapmakerMeta && json.mapmakerMeta.title) || "";
+      setMapTitle(realTitle);
       // a map may carry a lesson worksheet for the Learn panel
       currentWorksheet = (json.mapexplorerMeta && json.mapexplorerMeta.worksheet) || null;
       if($("learnPanel").classList.contains("open")) renderLearn();
@@ -1340,10 +1399,42 @@ require([
       openPane("layers");
     });
   }
+  // show the opened map's title in the header: "Map Explorer | <title>"
+  function setMapTitle(title){
+    const el = $("mapTitleLabel"); if(!el) return;
+    const t = (title||"").trim();
+    el.textContent = t ? `|\u2002${t}` : "";
+    document.title = t ? `Map Explorer | ${t}` : "Map Explorer";
+  }
   function applyOpProps(layer, op){
     if(op.title) layer.title = op.title;
-    if(op.opacity!=null) layer.opacity = op.opacity;
-    if(op.visibility!=null) layer.visible = op.visibility;
+    if(op.opacity!=null) layer.opacity = op.opacity;          // transparency at save time
+    if(op.visibility!=null) layer.visible = op.visibility;    // visibility at save time
+  }
+  // Restore 2D/3D mode and the saved center / extent / scale / rotation / camera
+  function restoreViewState(json){
+    const meta   = (json.mapexplorerMeta && json.mapexplorerMeta.view) || null;
+    const want3D = !!(json.mapexplorerMeta && json.mapexplorerMeta.is3D);
+    const apply = ()=>{
+      try{
+        if(is3D && meta && meta.camera){ view.goTo(Camera.fromJSON(meta.camera)).catch(()=>{}); return; }
+        const vpJSON = (meta && meta.viewpoint) || (json.initialState && json.initialState.viewpoint) || null;
+        if(vpJSON && vpJSON.targetGeometry){
+          view.goTo(Viewpoint.fromJSON(vpJSON)).catch(()=>{
+            try{ view.goTo(Extent.fromJSON(vpJSON.targetGeometry)).catch(()=>{}); }catch(e){}
+          });
+          return;
+        }
+        if(meta && meta.center && meta.scale){ view.goTo({ target: Point.fromJSON(meta.center), scale: meta.scale }).catch(()=>{}); return; }
+        if(meta && meta.extent){ view.goTo(Extent.fromJSON(meta.extent)).catch(()=>{}); return; }
+      }catch(e){}
+    };
+    if(want3D !== is3D){            // switch mode to match the saved map, then frame it
+      setView(want3D ? "3d" : "2d", false);
+      view.when(()=>apply());
+    } else {
+      apply();
+    }
   }
 
   /* ---------- header buttons + modals ---------- */
@@ -1465,7 +1556,9 @@ require([
   $("btnSave").addEventListener("click", ()=>$("saveModal").classList.add("open"));
   $("saveCancel").addEventListener("click", ()=>$("saveModal").classList.remove("open"));
   $("saveConfirm").addEventListener("click", ()=>{
-    downloadMap($("mapTitle").value.trim());
+    const t = $("mapTitle").value.trim();
+    downloadMap(t);
+    setMapTitle(t);
     $("saveModal").classList.remove("open");
   });
 
