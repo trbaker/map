@@ -186,6 +186,32 @@
   .card .add{font-size:var(--text-xs);font-weight:600;color:var(--paper);background:var(--ink-900);
     border:1px solid var(--ink-900);border-radius:var(--radius-full);padding:6px 14px;cursor:pointer;transition:background .15s ease}
   .card .add:hover{background:var(--ink-950)}
+  .card.featured{border-color:var(--accent)}
+  .card .tag.feat{background:var(--accent);color:#fff}
+  .results-head{font-size:var(--text-xs);font-weight:700;color:var(--text-soft);
+    text-transform:uppercase;letter-spacing:.06em;margin:14px 0 2px}
+  .results-head:first-child{margin-top:4px}
+  .wm-thumb{display:block;height:84px;width:100%;background-size:cover;background-position:center;
+    background-color:var(--ink-100);border-radius:var(--radius-md);margin-bottom:8px;border:1px solid var(--border)}
+
+  /* custom layer list */
+  .ll-list{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  .ll-item{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);
+    border-radius:var(--radius-md);background:var(--surface);padding:9px 11px;box-shadow:var(--shadow-sm)}
+  .ll-vis{flex:0 0 auto;width:28px;height:28px;border:none;background:transparent;cursor:pointer;
+    color:var(--ink-700);display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm)}
+  .ll-vis:hover{background:var(--ink-50)}
+  .ll-vis.off{color:var(--ink-300)}
+  .ll-body{flex:1;min-width:0}
+  .ll-name{font-size:var(--text-sm);font-weight:600;color:var(--ink-900);line-height:1.25;word-break:break-word}
+  .ll-actions{display:flex;gap:5px;margin-top:7px}
+  .ll-act{width:26px;height:26px;border:1px solid var(--border);background:var(--surface);
+    border-radius:var(--radius-sm);cursor:pointer;color:var(--ink-600);display:flex;align-items:center;justify-content:center;padding:0;
+    transition:background .12s ease,color .12s ease,border-color .12s ease}
+  .ll-act:hover{background:var(--ink-50);color:var(--ink-900);border-color:var(--ink-300)}
+  .ll-act.danger:hover{background:#d9534f;color:#fff;border-color:#d9534f}
+  .ll-icon{width:15px;height:15px;display:block}
+  .ll-empty{font-size:var(--text-xs);color:var(--text-mute);font-style:italic}
   .empty{font-size:var(--text-sm);color:var(--text-mute);font-style:italic;padding:8px 0}
 
   .widget-host{margin-top:8px}
@@ -233,6 +259,36 @@
   /* ---------- Map + footer ---------- */
   #map-wrap{flex:1;position:relative;min-width:0}
   #viewDiv{position:absolute;inset:0}
+
+  /* Learn worksheet panel — docked over the right half of the map, map stays interactive */
+  #learnPanel{
+    position:absolute;top:0;right:0;bottom:0;width:50%;min-width:300px;z-index:20;
+    background:var(--surface);border-left:1px solid var(--border);
+    box-shadow:-10px 0 30px rgba(42,38,34,.14);
+    display:none;flex-direction:column;
+  }
+  #learnPanel.open{display:flex;animation:learnIn .18s ease}
+  @keyframes learnIn{from{transform:translateX(14px);opacity:.4}to{transform:translateX(0);opacity:1}}
+  .learn-head{display:flex;align-items:center;justify-content:space-between;
+    padding:14px 18px;border-bottom:1px solid var(--border);background:var(--ink-50)}
+  .learn-head h2{margin:0;font-family:var(--font-display);font-size:var(--text-lg);font-weight:600;color:var(--ink-950)}
+  .learn-close{border:none;background:none;font-size:24px;line-height:1;color:var(--text-mute);cursor:pointer;padding:2px 8px;border-radius:var(--radius-sm)}
+  .learn-close:hover{background:var(--ink-100);color:var(--text)}
+  .learn-body{flex:1;overflow-y:auto;padding:18px 20px}
+  /* keep the map's right-side controls visible beside the open panel */
+  #map-wrap.learn-open .esri-ui-top-right,
+  #map-wrap.learn-open .esri-ui-bottom-right{right:calc(50% + 14px)}
+  /* worksheet content */
+  .ws-eyebrow{font-size:var(--text-xs);font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin:0 0 6px}
+  .ws-title{font-family:var(--font-display);font-size:var(--text-xl);font-weight:700;color:var(--ink-950);margin:0 0 8px;line-height:1.15}
+  .ws-intro{font-size:var(--text-sm);color:var(--text-soft);line-height:1.6;margin:0 0 18px}
+  .ws-section{font-family:var(--font-display);font-size:var(--text-base);font-weight:600;color:var(--ink-900);margin:18px 0 8px}
+  .ws-task{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--border-soft)}
+  .ws-task input{margin-top:3px;width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto;cursor:pointer}
+  .ws-task label{font-size:var(--text-sm);color:var(--text);line-height:1.5}
+  .ws-task .hint{display:block;font-size:var(--text-xs);color:var(--text-mute);margin-top:3px}
+  .ws-placeholder{border:1px dashed var(--ink-300);border-radius:var(--radius-lg);padding:18px;background:var(--ink-50);color:var(--text-soft);font-size:var(--text-sm);line-height:1.6}
+  .ws-placeholder b{color:var(--ink-900)}
   #footer{
     position:absolute;left:0;right:0;bottom:0;height:28px;z-index:5;
     display:flex;align-items:center;gap:20px;padding:0 14px;
@@ -288,8 +344,8 @@
     <div class="brand"><b>Map Explorer</b><span>GIS</span></div>
     <div class="spacer"></div>
     <button id="btn3D" title="Switch between flat (2D) and 3D">🧊 3D view</button>
+    <button id="btnLearn" title="Open the lesson worksheet for this map">📖 Learn</button>
     <button id="btnDebug" class="temp-btn" title="Troubleshooting info (temporary)">🐞 Debug</button>
-    <button id="btnOpen">📂 Open map</button>
     <button id="btnSave" class="primary">💾 Save map</button>
     <input type="file" id="fileInput" accept=".json,application/json" style="display:none" />
   </header>
@@ -297,6 +353,7 @@
   <div id="body">
     <!-- Tool rail -->
     <nav id="rail">
+      <button class="tool" data-pane="open"><span class="ico">📂</span>Open</button>
       <button class="tool" data-pane="basemaps"><span class="ico">🗺️</span>Basemap</button>
       <button class="tool" data-pane="add"><span class="ico">➕</span>Add data</button>
       <button class="tool" data-pane="layers"><span class="ico">📋</span>Layer list</button>
@@ -314,6 +371,21 @@
       </div>
       <div class="panel-body">
 
+        <!-- Open -->
+        <div class="pane" id="pane-open">
+          <p class="hint">Open a ready-made map, or open a map you saved before.</p>
+
+          <label class="field-label">1. School gallery (ArcGIS Online)</label>
+          <p class="hint" style="margin:0 0 8px">Maps shared for students. Search, or leave blank to see them all.</p>
+          <input type="search" id="webmapQuery" placeholder="Search the gallery…" />
+          <div class="btn-row"><button class="btn" id="webmapSearchBtn">Show gallery maps</button></div>
+          <div class="results" id="webmapResults"></div>
+
+          <label class="field-label">2. Your own map</label>
+          <p class="hint" style="margin:0 0 8px">Open a Map Explorer file (<b>.json</b>) you saved earlier.</p>
+          <button class="btn ghost" id="openFileBtn">📁 Open a .json map file…</button>
+        </div>
+
         <!-- Basemaps -->
         <div class="pane" id="pane-basemaps">
           <p class="hint">Pick the background map your map sits on. Tap a thumbnail to load it. Imagery shows photos from space; Topographic shows roads and land features.</p>
@@ -322,7 +394,7 @@
 
         <!-- Add data -->
         <div class="pane" id="pane-add">
-          <p class="hint">Search ArcGIS Online for free public layers — try “rivers”, “earthquakes”, “national parks”, or “population”. Then press Add.</p>
+          <p class="hint">Search ArcGIS Online for free public layers — try “rivers”, “earthquakes”, “national parks”, or “population”. ★ Featured layers picked for school show up first. Then press Add.</p>
           <label class="field-label" for="layerQuery">Search public layers</label>
           <div class="row">
             <input type="search" id="layerQuery" placeholder="e.g. earthquakes" />
@@ -339,7 +411,7 @@
         <!-- Layers -->
         <div class="pane" id="pane-layers">
           <p class="hint">Turn layers on and off, reorder them, or remove ones you don’t need.</p>
-          <div id="layerListHost" class="widget-host"></div>
+          <div id="layerListCustom" class="ll-list"></div>
         </div>
 
         <!-- Measure -->
@@ -382,7 +454,7 @@
           <p class="hint">Click anywhere on the map to drop a pin. The latitude and longitude lock in place until you click somewhere else. You can also type coordinates below to jump there.</p>
           <div id="coordHost" class="widget-host"></div>
           <div id="placeInfo" class="place-info">
-            <div class="pi-hint">Click the map to see the nearest place name, coordinates, and elevation.</div>
+            <div class="pi-hint">Click the map to drop a pin and see the place name, address, elevation, and current weather. The exact latitude/longitude show above.</div>
           </div>
         </div>
 
@@ -410,6 +482,13 @@
         <span><span class="lbl">LAT/LONG</span>&nbsp; <span id="coordOut">move over the map…</span></span>
         <span><span class="lbl">SCALE</span>&nbsp; 1:<span id="scaleOut">—</span></span>
       </div>
+      <aside id="learnPanel" aria-label="Lesson worksheet">
+        <div class="learn-head">
+          <h2>📖 Learn</h2>
+          <button class="learn-close" id="learnClose" title="Close worksheet">×</button>
+        </div>
+        <div class="learn-body" id="learnBody"></div>
+      </aside>
     </div>
   </div>
 </div>
@@ -547,9 +626,81 @@ require([
     });
   }
 
+  /* ---------- custom layer list (icons under each name, no "…" menu) ---------- */
+  const LL_ICON = {
+    eye:    '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1 8s2.5-4.5 7-4.5S15 8 15 8s-2.5 4.5-7 4.5S1 8 1 8Z"/><circle cx="8" cy="8" r="2"/></svg>',
+    eyeOff: '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 8s2.5-4.5 6-4.5c1 0 1.9.3 2.7.7M14 8s-1 1.8-2.9 3.1M6 6.2A2 2 0 0 0 9.8 9.8M2 2l12 12"/></svg>',
+    zoom:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14M7 5v4M5 7h4"/></svg>',
+    up:     '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 10l4-4 4 4"/></svg>',
+    down:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6l4 4 4-4"/></svg>',
+    trash:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.6 9a1 1 0 0 0 1 1h4.8a1 1 0 0 0 1-1L12 4"/></svg>'
+  };
+  function llActBtn(svg, title, fn, danger){
+    const b = document.createElement("button");
+    b.className = "ll-act" + (danger ? " danger" : "");
+    b.title = title; b.setAttribute("aria-label", title); b.innerHTML = svg;
+    b.addEventListener("click", fn);
+    return b;
+  }
+  function moveLayer(layer, dir){
+    const arr = map.layers.toArray();
+    const i = arr.indexOf(layer), j = i + dir;
+    if(j < 0 || j >= arr.length) return;
+    map.layers.reorder(layer, j);
+    if(map.layers.includes(placeLayer)) map.layers.reorder(placeLayer, map.layers.length-1); // keep pin on top
+  }
+  function renderLayerList(){
+    const box = $("layerListCustom"); if(!box) return;
+    // top of the list = top of the map; hide internal layers (e.g. the place pin)
+    const layers = map.layers.toArray().filter(l=>l.listMode!=="hide").reverse();
+    box.innerHTML = "";
+    if(!layers.length){ box.innerHTML = `<p class="ll-empty">No layers yet. Add data, draw something, or pick a basemap.</p>`; return; }
+    layers.forEach(layer=>{
+      const item = document.createElement("div"); item.className = "ll-item";
+
+      // visibility toggle stays on the left
+      const vis = document.createElement("button");
+      vis.className = "ll-vis" + (layer.visible ? "" : " off");
+      vis.title = layer.visible ? "Hide layer" : "Show layer";
+      vis.innerHTML = layer.visible ? LL_ICON.eye : LL_ICON.eyeOff;
+      vis.addEventListener("click", ()=>{
+        layer.visible = !layer.visible;
+        vis.classList.toggle("off", !layer.visible);
+        vis.title = layer.visible ? "Hide layer" : "Show layer";
+        vis.innerHTML = layer.visible ? LL_ICON.eye : LL_ICON.eyeOff;
+      });
+
+      const body = document.createElement("div"); body.className = "ll-body";
+      const name = document.createElement("div"); name.className = "ll-name";
+      name.textContent = layer.title || "Layer";
+
+      // small action icons BENEATH the name
+      const acts = document.createElement("div"); acts.className = "ll-actions";
+      acts.appendChild(llActBtn(LL_ICON.zoom, "Zoom to", ()=>{
+        if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{});
+        else toast("This layer doesn't have a location yet.");
+      }));
+      acts.appendChild(llActBtn(LL_ICON.up,   "Move up",   ()=>moveLayer(layer, +1)));
+      acts.appendChild(llActBtn(LL_ICON.down, "Move down", ()=>moveLayer(layer, -1)));
+      if(layer !== sketchLayer){ // your drawings layer isn't removable (erase from the Sketch panel)
+        acts.appendChild(llActBtn(LL_ICON.trash, "Remove", ()=>{
+          map.remove(layer);
+          const i = addedLayers.indexOf(layer); if(i>-1) addedLayers.splice(i,1);
+          if(layer===buildingsLayer) buildingsLayer = null;
+        }, true));
+      }
+
+      body.appendChild(name); body.appendChild(acts);
+      item.appendChild(vis); item.appendChild(body);
+      box.appendChild(item);
+    });
+  }
+  map.layers.on("change", renderLayerList);  // re-render when layers are added, removed, or reordered
+  renderLayerList();
+
   /* ---------- view + widgets (rebuilt when switching 2D <-> 3D) ---------- */
   let view = null, is3D = false, buildingsLayer = null;
-  let search, layerList, measurement, sketch, coordWidget;
+  let search, measurement, sketch, coordWidget;
   let homeW, locateW, scaleBar, pointerHandle, scaleHandle, placeClickHandle;
 
   function fmt(n){ return n.toFixed(5); }
@@ -600,46 +751,83 @@ require([
                       outline:{ color:[255,255,255], width:2 } };
   let placeReqId = 0;
   function piRow(label, val){ return `<div><span>${label}</span><b>${val}</b></div>`; }
+  const WX_CODE = {0:"Clear",1:"Mainly clear",2:"Partly cloudy",3:"Overcast",45:"Fog",48:"Fog",
+    51:"Light drizzle",53:"Drizzle",55:"Heavy drizzle",56:"Freezing drizzle",57:"Freezing drizzle",
+    61:"Light rain",63:"Rain",65:"Heavy rain",66:"Freezing rain",67:"Freezing rain",
+    71:"Light snow",73:"Snow",75:"Heavy snow",77:"Snow grains",
+    80:"Rain showers",81:"Rain showers",82:"Heavy showers",85:"Snow showers",86:"Snow showers",
+    95:"Thunderstorm",96:"Thunderstorm w/ hail",99:"Thunderstorm w/ hail"};
+  const f2c = (f)=>Math.round((f-32)*5/9);
+  const tempFC = (f)=>`${Math.round(f)}°F · ${f2c(f)}°C`;
+  function windDir(d){
+    return ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(d/22.5)%16];
+  }
   function describePlace(lat, lon, mapPoint){
     placeLayer.removeAll();
     placeLayer.add(new Graphic({ geometry: mapPoint || new Point({ longitude:lon, latitude:lat }), symbol: PLACE_PIN }));
     const myId = ++placeReqId;
-    $("placeInfo").innerHTML =
-      `<div class="pi-name">Dropped pin</div>`+
-      `<div class="pi-rows">${piRow("Latitude", lat.toFixed(5))}${piRow("Longitude", lon.toFixed(5))}</div>`+
-      `<div class="pi-hint" style="margin-top:10px">Looking up place name…</div>`;
-    // free, fast, no-key sources: OpenStreetMap (reverse geocode) + Open-Meteo (elevation)
+    $("placeInfo").innerHTML = `<div class="pi-name">Dropped pin</div><div class="pi-hint">Looking up this place…</div>`;
+    // free, fast, no-key sources: OpenStreetMap (place + address) + Open-Meteo (elevation, weather)
     const geoP  = fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&addressdetails=1&lat=${lat}&lon=${lon}`)
                     .then(r=>r.json()).catch(()=>null);
     const elevP = fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`)
                     .then(r=>r.json()).then(d=>Array.isArray(d.elevation)?d.elevation[0]:null).catch(()=>null);
-    Promise.all([geoP, elevP]).then(([geo, elev])=>{
+    const wxP   = fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`+
+                    `&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day,wind_speed_10m,wind_direction_10m`+
+                    `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max`+
+                    `&temperature_unit=fahrenheit&wind_speed_unit=mph&timezone=auto&forecast_days=1`)
+                    .then(r=>r.json()).catch(()=>null);
+    Promise.all([geoP, elevP, wxP]).then(([geo, elev, wx])=>{
       if(myId !== placeReqId) return;   // a newer click already happened
-      renderPlace(lat, lon, geo, elev);
+      renderPlace(geo, elev, wx);
     });
     if(window.__mxlog) window.__mxlog(`Place clicked: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
   }
-  function renderPlace(lat, lon, geo, elev){
-    let title = "Dropped pin", sub = "";
+  function renderPlace(geo, elev, wx){
+    let title = "Dropped pin";
+    const rows = [];
     if(geo && !geo.error){
       const a = geo.address || {};
-      const local = a.city||a.town||a.village||a.hamlet||a.suburb||a.neighbourhood||a.county;
-      title = geo.name || (geo.display_name ? geo.display_name.split(",")[0] : null) || local || "Dropped pin";
-      sub = geo.display_name || [local, a.state, a.country].filter(Boolean).join(", ");
+      const local = a.city||a.town||a.village||a.hamlet||a.suburb||a.neighbourhood;
+      title = geo.name || local || a.county || (geo.display_name ? geo.display_name.split(",")[0] : "Dropped pin");
+      const street = [a.house_number, a.road].filter(Boolean).join(" ");
+      if(street) rows.push(piRow("Street", escapeHtml(street)));
+      if(local && local!==title) rows.push(piRow("Town / city", escapeHtml(local)));
+      if(a.county)  rows.push(piRow("County", escapeHtml(a.county)));
+      if(a.state)   rows.push(piRow("State", escapeHtml(a.state)));
+      if(a.country) rows.push(piRow("Country", escapeHtml(a.country)));
+      if(a.postcode)rows.push(piRow("Postal code", escapeHtml(a.postcode)));
+      if(geo.category && geo.type) rows.push(piRow("Feature", escapeHtml(geo.category+" · "+geo.type)));
     }
-    const rows = [ piRow("Latitude", lat.toFixed(5)), piRow("Longitude", lon.toFixed(5)) ];
     if(elev!=null && !isNaN(elev)) rows.push(piRow("Elevation", `${Math.round(elev)} m (${Math.round(elev*3.28084)} ft)`));
-    if(geo && geo.category && geo.type) rows.push(piRow("Type", `${geo.category} · ${geo.type}`));
+    if(wx && wx.current){
+      const cur = wx.current, dly = wx.daily || {};
+      const cond = WX_CODE[cur.weather_code] || "—";
+      const tod  = (cur.is_day===0) ? " (night)" : (cur.is_day===1 ? " (day)" : "");
+      rows.push(piRow("Weather now", escapeHtml(cond + tod)));
+      if(cur.temperature_2m!=null)        rows.push(piRow("Temperature", tempFC(cur.temperature_2m)));
+      if(cur.apparent_temperature!=null)  rows.push(piRow("Feels like", tempFC(cur.apparent_temperature)));
+      if(dly.temperature_2m_max && dly.temperature_2m_max.length){
+        const hi=dly.temperature_2m_max[0], lo=dly.temperature_2m_min[0];
+        rows.push(piRow("Today high / low", `${Math.round(hi)}° / ${Math.round(lo)}°F · ${f2c(hi)}° / ${f2c(lo)}°C`));
+      }
+      if(dly.precipitation_probability_max && dly.precipitation_probability_max[0]!=null)
+        rows.push(piRow("Rain chance today", `${dly.precipitation_probability_max[0]}%`));
+      if(cur.relative_humidity_2m!=null)  rows.push(piRow("Humidity", `${Math.round(cur.relative_humidity_2m)}%`));
+      if(cur.wind_speed_10m!=null){
+        const dir = (cur.wind_direction_10m!=null) ? " "+windDir(cur.wind_direction_10m) : "";
+        rows.push(piRow("Wind", `${Math.round(cur.wind_speed_10m)} mph${dir} · ${Math.round(cur.wind_speed_10m*1.60934)} km/h`));
+      }
+    }
     $("placeInfo").innerHTML =
       `<div class="pi-name">${escapeHtml(title)}</div>`+
-      (sub ? `<div class="pi-sub">${escapeHtml(sub)}</div>` : "")+
-      `<div class="pi-rows">${rows.join("")}</div>`;
+      (rows.length ? `<div class="pi-rows">${rows.join("")}</div>` : `<div class="pi-hint">No extra details found for this spot.</div>`);
   }
 
   function destroyActiveView(){
-    [search,layerList,measurement,sketch,coordWidget,homeW,locateW,scaleBar]
+    [search,measurement,sketch,coordWidget,homeW,locateW,scaleBar]
       .forEach(w=>{ try{ if(w) w.destroy(); }catch(e){} });
-    search=layerList=measurement=sketch=coordWidget=homeW=locateW=scaleBar=null;
+    search=measurement=sketch=coordWidget=homeW=locateW=scaleBar=null;
     try{ if(pointerHandle) pointerHandle.remove(); }catch(e){}
     try{ if(scaleHandle) scaleHandle.remove(); }catch(e){}
     try{ if(placeClickHandle) placeClickHandle.remove(); }catch(e){}
@@ -662,28 +850,6 @@ require([
 
     // panel widgets
     renderBasemapGrid(); // clickable basemap thumbnails for this mode
-
-    layerList = new LayerList({
-      view, container:"layerListHost",
-      listItemCreatedFunction: (e)=>{
-        const item = e.item;
-        if(item.layer === sketchLayer) item.title = "My drawings";
-        item.actionsSections = [[
-          { title:"Remove", icon:"trash", id:"remove-layer" },
-          { title:"Zoom to", icon:"zoom-to-object", id:"zoom-to" }
-        ]];
-      }
-    });
-    layerList.on("trigger-action", (e)=>{
-      const layer = e.item.layer;
-      if(e.action.id==="remove-layer"){
-        map.remove(layer);
-        const i = addedLayers.indexOf(layer); if(i>-1) addedLayers.splice(i,1);
-        if(layer===buildingsLayer) buildingsLayer=null;
-      } else if(e.action.id==="zoom-to" && layer.fullExtent){
-        view.goTo(layer.fullExtent).catch(()=>{});
-      }
-    });
 
     measurement = new Measurement({ view, container:"measureHost" });
     sketch = new Sketch({ view, layer:sketchLayer, container:"sketchHost",
@@ -788,7 +954,7 @@ require([
 
 
   /* ---------- tool rail / panel switching ---------- */
-  const titles = { basemaps:"Basemap", add:"Add data", layers:"Layer list", measure:"Measure",
+  const titles = { open:"Open a map", basemaps:"Basemap", add:"Add data", layers:"Layer list", measure:"Measure",
                    sketch:"Sketch", coords:"Place", help:"Help" };
   let currentPane = null;
   function openPane(name){
@@ -799,6 +965,11 @@ require([
     document.querySelectorAll(".pane").forEach(p=>p.classList.remove("active"));
     $("pane-"+name).classList.add("active");
     document.querySelectorAll(".tool").forEach(t=>t.classList.toggle("active", t.dataset.pane===name));
+    // first time the Open pane is shown, load the gallery automatically
+    if(name==="open" && $("webmapResults") && !$("webmapResults").dataset.loaded){
+      $("webmapResults").dataset.loaded = "1";
+      searchWebMaps();
+    }
   }
   function closePanel(){
     currentPane=null;
@@ -818,38 +989,101 @@ require([
     });
   }
 
+  const FEATURED_GROUP = "36443e9570294a1f883b5d2c5abfe6b5";
+  function layerCard(it){
+    const card = document.createElement("div");
+    card.className = "card" + (it._featured ? " featured" : "");
+    const badge = it._featured
+      ? `<span class="tag feat">★ Featured</span>`
+      : `<span class="tag">${escapeHtml(it.type)}</span>`;
+    card.innerHTML =
+      badge +
+      `<h4>${escapeHtml(it.title)}</h4>`+
+      `<p class="meta">by ${escapeHtml(it.owner||"unknown")}${it.snippet?" · "+escapeHtml(it.snippet):""}</p>`+
+      `<button class="add">Add to map</button>`;
+    card.querySelector(".add").addEventListener("click", ()=>{
+      addByPortalItem(it.id, it.title).catch(()=>toast("Sorry — that layer couldn’t be added."));
+    });
+    return card;
+  }
+  function resultsHead(text){
+    const h = document.createElement("p"); h.className = "results-head"; h.textContent = text; return h;
+  }
   function searchLayers(){
     const term = $("layerQuery").value.trim();
     if(!term) return;
     const box = $("layerResults");
     box.innerHTML = `<p class="empty">Searching…</p>`;
-    const q = encodeURIComponent(`${term} (type:"Feature Service" OR type:"Map Service" OR type:"Feature Collection")`);
-    fetch(`https://www.arcgis.com/sharing/rest/search?q=${q}&f=json&num=12&sortField=numviews&sortOrder=desc`)
-      .then(r=>r.json())
-      .then(data=>{
-        box.innerHTML = "";
-        const items = (data.results||[]).filter(it=>it.access==="public");
-        if(!items.length){ box.innerHTML = `<p class="empty">No public layers found. Try another word.</p>`; return; }
-        items.forEach(it=>{
-          const card = document.createElement("div");
-          card.className="card";
-          card.innerHTML =
-            `<span class="tag">${it.type}</span>`+
-            `<h4>${escapeHtml(it.title)}</h4>`+
-            `<p class="meta">by ${escapeHtml(it.owner||"unknown")}${it.snippet?" · "+escapeHtml(it.snippet):""}</p>`+
-            `<button class="add">Add to map</button>`;
-          card.querySelector(".add").addEventListener("click", ()=>{
-            addByPortalItem(it.id, it.title).catch(()=>toast("Sorry — that layer couldn’t be added."));
-          });
-          box.appendChild(card);
-        });
-      })
-      .catch(()=>{ box.innerHTML = `<p class="empty">Search failed. Check your internet connection.</p>`; });
+    const typeQ = '(type:"Feature Service" OR type:"Map Service" OR type:"Image Service" OR type:"Feature Collection")';
+    const q = encodeURIComponent(`${term} ${typeQ}`);
+    // 1) the curated school gallery (prioritized)  2) all public ArcGIS Online
+    const groupUrl = `https://www.arcgis.com/sharing/rest/content/groups/${FEATURED_GROUP}/search?q=${q}&f=json&num=12&sortField=numviews&sortOrder=desc`;
+    const pubUrl   = `https://www.arcgis.com/sharing/rest/search?q=${q}&f=json&num=12&sortField=numviews&sortOrder=desc`;
+    Promise.all([
+      fetch(groupUrl).then(r=>r.json()).catch(()=>({})),
+      fetch(pubUrl).then(r=>r.json()).catch(()=>({}))
+    ]).then(([g, p])=>{
+      const groupItems = (g.results || []);
+      groupItems.forEach(it=>it._featured = true);
+      const seen = new Set(groupItems.map(it=>it.id));
+      const pubItems = (p.results || []).filter(it=>it.access==="public" && !seen.has(it.id));
+      box.innerHTML = "";
+      if(!groupItems.length && !pubItems.length){
+        box.innerHTML = `<p class="empty">No layers found. Try another word.</p>`; return;
+      }
+      if(groupItems.length){
+        box.appendChild(resultsHead("Featured — picked for school"));
+        groupItems.forEach(it=>box.appendChild(layerCard(it)));
+      }
+      if(pubItems.length){
+        box.appendChild(resultsHead(groupItems.length ? "More from ArcGIS Online" : "Results"));
+        pubItems.forEach(it=>box.appendChild(layerCard(it)));
+      }
+    }).catch(()=>{ box.innerHTML = `<p class="empty">Search failed. Check your internet connection.</p>`; });
   }
   function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
 
   $("layerSearchBtn").addEventListener("click", searchLayers);
   $("layerQuery").addEventListener("keydown", e=>{ if(e.key==="Enter") searchLayers(); });
+
+  /* ---------- Open a web map from the school gallery (ArcGIS Online) ---------- */
+  function searchWebMaps(){
+    const term = $("webmapQuery").value.trim();
+    const box = $("webmapResults");
+    box.innerHTML = `<p class="empty">Loading gallery…</p>`;
+    const q = encodeURIComponent(`${term} type:"Web Map"`.trim());
+    const url = `https://www.arcgis.com/sharing/rest/content/groups/${FEATURED_GROUP}/search?q=${q}&f=json&num=24&sortField=title&sortOrder=asc`;
+    fetch(url).then(r=>r.json()).then(data=>{
+      box.innerHTML = "";
+      const items = (data.results || []);
+      if(!items.length){ box.innerHTML = `<p class="empty">No maps found in the gallery.</p>`; return; }
+      items.forEach(it=>{
+        const card = document.createElement("div");
+        card.className = "card";
+        const thumb = it.thumbnail ? `https://www.arcgis.com/sharing/rest/content/items/${it.id}/info/${it.thumbnail}` : "";
+        card.innerHTML =
+          (thumb ? `<span class="wm-thumb" style="background-image:url('${thumb}')"></span>` : "") +
+          `<h4>${escapeHtml(it.title)}</h4>`+
+          `<p class="meta">${escapeHtml(it.snippet || ("by " + (it.owner||"unknown")))}</p>`+
+          `<button class="add">Open this map</button>`;
+        card.querySelector(".add").addEventListener("click", ()=>openWebMapItem(it.id, it.title));
+        box.appendChild(card);
+      });
+    }).catch(()=>{ box.innerHTML = `<p class="empty">Couldn’t reach the gallery. Check your connection.</p>`; });
+  }
+  function openWebMapItem(id, title){
+    toast(`Opening “${title}”…`);
+    fetch(`https://www.arcgis.com/sharing/rest/content/items/${id}/data?f=json`)
+      .then(r=>r.json())
+      .then(json=>{
+        if(!json || (!json.operationalLayers && !json.baseMap)){ toast("That map couldn’t be read."); return; }
+        loadWebMap(json);
+        closePanel();
+      })
+      .catch(()=>toast("Couldn’t open that map."));
+  }
+  $("webmapSearchBtn").addEventListener("click", searchWebMaps);
+  $("webmapQuery").addEventListener("keydown", e=>{ if(e.key==="Enter") searchWebMaps(); });
 
   /* ---------- SAVE: build standard ArcGIS web map JSON ---------- */
   const GEOM_TYPE = { point:"esriGeometryPoint", polyline:"esriGeometryPolyline",
@@ -986,6 +1220,9 @@ require([
         if(g) view.goTo(Extent.fromJSON(g)).catch(()=>{});
       }catch(e){}
       const name = (json.mapexplorerMeta && json.mapexplorerMeta.title) || (json.mapfusionMeta && json.mapfusionMeta.title) || (json.mapmakerMeta && json.mapmakerMeta.title) || "map";
+      // a map may carry a lesson worksheet for the Learn panel
+      currentWorksheet = (json.mapexplorerMeta && json.mapexplorerMeta.worksheet) || null;
+      if($("learnPanel").classList.contains("open")) renderLearn();
       toast(`Opened “${name}”`);
       openPane("layers");
     });
@@ -1059,7 +1296,47 @@ require([
     else toast("Select the text and copy manually");
   });
   /* ===== end troubleshooting tool ===== */
-  $("btnOpen").addEventListener("click", ()=>$("fileInput").click());
+
+  /* ---------- Learn: lesson worksheet panel (docked over the map) ---------- */
+  let currentWorksheet = null; // a future map can carry: { title, intro, sections:[{ heading, tasks:[{text,hint}] }] }
+  function renderLearn(){
+    const body = $("learnBody"); if(!body) return;
+    if(currentWorksheet && (currentWorksheet.sections || currentWorksheet.intro)){
+      const w = currentWorksheet;
+      let html = `<p class="ws-eyebrow">Worksheet</p>`+
+                 `<h3 class="ws-title">${escapeHtml(w.title||"Lesson")}</h3>`+
+                 (w.intro ? `<p class="ws-intro">${escapeHtml(w.intro)}</p>` : "");
+      (w.sections||[]).forEach(sec=>{
+        if(sec.heading) html += `<div class="ws-section">${escapeHtml(sec.heading)}</div>`;
+        (sec.tasks||[]).forEach((t,i)=>{
+          const id = "ws_"+Math.random().toString(36).slice(2,8);
+          html += `<div class="ws-task"><input type="checkbox" id="${id}"><label for="${id}">${escapeHtml(t.text||t)}`+
+                  (t.hint?`<span class="hint">${escapeHtml(t.hint)}</span>`:"")+`</label></div>`;
+        });
+      });
+      body.innerHTML = html;
+    } else {
+      // placeholder until a worksheet is attached to a map
+      body.innerHTML =
+        `<p class="ws-eyebrow">Worksheet</p>`+
+        `<h3 class="ws-title">No lesson attached yet</h3>`+
+        `<div class="ws-placeholder">When your teacher attaches a <b>worksheet</b> to this map, the questions and activities will appear right here — next to the map so you can read, explore, and answer at the same time.<br><br>Example of what a lesson might look like:</div>`+
+        `<div class="ws-section">Warm-up</div>`+
+        `<div class="ws-task"><input type="checkbox" id="wsx1"><label for="wsx1">Switch the basemap to <b>Imagery</b> and find your school.<span class="hint">Use the Basemap tool, then the Search box.</span></label></div>`+
+        `<div class="ws-task"><input type="checkbox" id="wsx2"><label for="wsx2">Use the <b>Place</b> tool to drop a pin on a river. What is its elevation?</label></div>`+
+        `<div class="ws-task"><input type="checkbox" id="wsx3"><label for="wsx3">Turn on <b>3D</b> and tilt the map. Describe one landform you see.</label></div>`+
+        `<div class="ws-section">Explore</div>`+
+        `<div class="ws-task"><input type="checkbox" id="wsx4"><label for="wsx4">Add a layer about <b>earthquakes</b> and measure the distance between two of them.</label></div>`;
+    }
+  }
+  function openLearn(){ $("learnPanel").classList.add("open"); $("map-wrap").classList.add("learn-open"); renderLearn(); }
+  function closeLearn(){ $("learnPanel").classList.remove("open"); $("map-wrap").classList.remove("learn-open"); }
+  $("btnLearn").addEventListener("click", ()=>{
+    $("learnPanel").classList.contains("open") ? closeLearn() : openLearn();
+  });
+  $("learnClose").addEventListener("click", closeLearn);
+
+  $("openFileBtn").addEventListener("click", ()=>$("fileInput").click());
   $("fileInput").addEventListener("change", (e)=>{
     const file = e.target.files[0]; if(!file) return;
     const reader = new FileReader();
