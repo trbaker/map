@@ -397,9 +397,8 @@
   <header>
     <div class="brand"><b>Map Explorer</b><span id="mapTitleLabel" class="map-title"></span></div>
     <div class="spacer"></div>
-    <button id="btn3D" title="Switch between flat (2D) and 3D">🧊 3D view</button>
     <button id="btnLearn" title="Open the lesson worksheet for this map">📖 Learn</button>
-    <button id="btnDebug" class="temp-btn" title="Troubleshooting info (temporary)">🐞 Debug</button>
+    <button id="btnDebug" class="temp-btn" title="Troubleshooting info (temporary)" style="display:none">🐞 Debug</button>
     <button id="btnSave" class="primary">💾 Save map</button>
     <input type="file" id="fileInput" accept=".json,application/json" style="display:none" />
   </header>
@@ -414,6 +413,7 @@
       <button class="tool" data-pane="layers"><span class="ico">📋</span>Layer list</button>
       <button class="tool" data-pane="coords"><span class="ico">📍</span>Place</button>
       <button class="tool" data-pane="measure"><span class="ico">📏</span>Measure</button>
+      <button class="tool" id="btnView3D" title="Switch between flat (2D) and 3D"><span class="ico">🧊</span>2D/3D</button>
       <button class="tool" data-pane="help"><span class="ico">❓</span>Help</button>
     </nav>
 
@@ -646,18 +646,22 @@ require([
     name: "Places & addresses",
     placeholder: "Find a place or address",
     getSuggestions: (p) =>
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(p.suggestTerm)}`)
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=5&q=${encodeURIComponent(p.suggestTerm||"")}`)
         .then(r=>r.json())
-        .then(d=>d.map((x,i)=>({ key:x.place_id, text:x.display_name, sourceIndex:p.sourceIndex }))),
-    getResults: (p) =>
-      fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${encodeURIComponent(p.suggestTerm)}`)
+        .then(d=> Array.isArray(d) ? d.map(x=>({ key:String(x.place_id), text:x.display_name, sourceIndex:p.sourceIndex })) : [])
+        .catch(()=>[]),
+    getResults: (p) => {
+      // the term lives in suggestResult.text (set whether the user picked a suggestion or just hit Enter)
+      const term = (p.suggestResult && p.suggestResult.text) || p.searchTerm || p.suggestTerm || "";
+      if(!term) return Promise.resolve([]);
+      return fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${encodeURIComponent(term)}`)
         .then(r=>r.json())
-        .then(d=>d.map(x=>{
+        .then(d=> (Array.isArray(d)?d:[]).map(x=>{
           const pt = new Point({ longitude:+x.lon, latitude:+x.lat });
+          const bb = x.boundingbox;  // Nominatim: [minLat, maxLat, minLon, maxLon]
           return {
-            extent: x.boundingbox ? new Extent({
-              ymin:+x.boundingbox[0], ymax:+x.boundingbox[1],
-              xmin:+x.boundingbox[2], xmax:+x.boundingbox[3],
+            extent: bb ? new Extent({
+              ymin:+bb[0], ymax:+bb[1], xmin:+bb[2], xmax:+bb[3],
               spatialReference:{ wkid:4326 }
             }) : null,
             feature: new Graphic({ geometry:pt, attributes:{ name:x.display_name } }),
@@ -665,6 +669,8 @@ require([
             target: pt
           };
         }))
+        .catch(()=>[]);
+    }
   };
 
   /* ---------- curated basemaps: a different set in 3D mode ---------- */
@@ -677,28 +683,52 @@ require([
     "terrain":"Terrain", "streets-night-vector":"Streets at Night"
   };
   let currentBasemapId = "topo-vector";
+  // OpenStreetMap basemaps offered in 3D (all key-free; render in SceneView).
+  const OSM_3D = [
+    { id:"osm", label:"OpenStreetMap", make:()=>Basemap.fromId("osm") },
+    { id:"osm-hot", label:"OSM Humanitarian",
+      thumb:"https://a.tile.openstreetmap.fr/hot/5/8/12.png",
+      make:()=>new Basemap({ title:"OpenStreetMap (Humanitarian)", baseLayers:[ new WebTileLayer({
+        urlTemplate:"https://{subDomain}.tile.openstreetmap.fr/hot/{level}/{col}/{row}.png",
+        subDomains:["a","b"], copyright:"Tiles © Humanitarian OSM Team · © OpenStreetMap contributors" }) ] }) },
+    { id:"osm-topo", label:"OpenTopoMap",
+      thumb:"https://a.tile.opentopomap.org/5/8/12.png",
+      make:()=>new Basemap({ title:"OpenTopoMap", baseLayers:[ new WebTileLayer({
+        urlTemplate:"https://{subDomain}.tile.opentopomap.org/{level}/{col}/{row}.png",
+        subDomains:["a","b","c"], copyright:"© OpenTopoMap (CC-BY-SA) · © OpenStreetMap contributors" }) ] }) }
+  ];
+  // unified list of basemap "specs" for the current mode (OSM first in 3D)
+  function basemapSpecs(){
+    const list = [];
+    if(is3D) OSM_3D.forEach(o=>list.push(o));
+    (is3D ? BASEMAPS_3D : BASEMAPS_2D).forEach(id=> list.push({ id, label:BM_LABELS[id]||id, make:()=>Basemap.fromId(id) }));
+    return list;
+  }
   // build the clickable thumbnail grid for the current mode's basemap set
   function renderBasemapGrid(){
     const grid = $("basemapGrid"); if(!grid) return;
-    const ids = is3D ? BASEMAPS_3D : BASEMAPS_2D;
     grid.innerHTML = "";
-    ids.forEach(id=>{
-      const bm = Basemap.fromId(id);
+    basemapSpecs().forEach(spec=>{
+      let bm; try{ bm = spec.make(); }catch(e){ bm = null; }
       if(!bm) return;
       const tile = document.createElement("button");
-      tile.className = "bm-tile" + (id===currentBasemapId ? " active" : "");
-      tile.dataset.id = id;
-      tile.innerHTML = `<span class="bm-thumb"></span><span class="bm-label">${BM_LABELS[id]||id}</span>`;
+      tile.className = "bm-tile" + (spec.id===currentBasemapId ? " active" : "");
+      tile.dataset.id = spec.id;
+      tile.innerHTML = `<span class="bm-thumb"></span><span class="bm-label">${spec.label}</span>`;
       const thumb = tile.querySelector(".bm-thumb");
-      bm.loadAll().then(()=>{
-        const t = (bm.portalItem && bm.portalItem.thumbnailUrl) || bm.thumbnailUrl;
-        if(t) thumb.style.backgroundImage = `url("${t}")`;
-      }).catch(()=>{});
+      if(spec.thumb){
+        thumb.style.backgroundImage = `url("${spec.thumb}")`;
+      } else {
+        bm.loadAll().then(()=>{
+          const t = (bm.portalItem && bm.portalItem.thumbnailUrl) || bm.thumbnailUrl;
+          if(t) thumb.style.backgroundImage = `url("${t}")`;
+        }).catch(()=>{});
+      }
       tile.addEventListener("click", ()=>{
         map.basemap = bm;
-        currentBasemapId = id;
-        grid.querySelectorAll(".bm-tile").forEach(x=>x.classList.toggle("active", x.dataset.id===id));
-        if(window.__mxlog) window.__mxlog("Basemap set to "+id);
+        currentBasemapId = spec.id;
+        grid.querySelectorAll(".bm-tile").forEach(x=>x.classList.toggle("active", x.dataset.id===spec.id));
+        if(window.__mxlog) window.__mxlog("Basemap set to "+spec.id);
       });
       grid.appendChild(tile);
     });
@@ -764,13 +794,13 @@ require([
         if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{});
         else toast("This layer doesn't have a location yet.");
       }));
-      // item details on ArcGIS Online (only for layers backed by a portal item)
+      // item details on ArcGIS Online — always shown; disabled when there's no details page
       const itemId = layer.portalItem && layer.portalItem.id;
-      if(itemId){
-        acts.appendChild(llActBtn(LL_ICON.info, "Item details (opens ArcGIS Online)", ()=>{
-          window.open(`https://www.arcgis.com/home/item.html?id=${itemId}`, "_blank", "noopener");
-        }));
-      }
+      const infoBtn = llActBtn(LL_ICON.info,
+        itemId ? "Item details (opens ArcGIS Online)" : "No ArcGIS Online details page for this layer",
+        ()=>{ if(itemId) window.open(`https://www.arcgis.com/home/item.html?id=${itemId}`, "_blank", "noopener"); });
+      if(!itemId){ infoBtn.disabled = true; infoBtn.classList.add("is-disabled"); }
+      acts.appendChild(infoBtn);
       // attribute table — only for vector (feature) layers
       if(layer.type === "feature"){
         acts.appendChild(llActBtn(LL_ICON.table, "Show data table", ()=>openTable(layer)));
@@ -1256,6 +1286,7 @@ require([
     const vp = view ? view.viewpoint : null;
     destroyActiveView();
     is3D = (mode === "3d");
+    const tb = $("btnView3D"); if(tb) tb.classList.toggle("active", is3D);
     if(is3D){
       view = new SceneView({ container:"viewDiv", map, viewpoint: vp || undefined });
       add3DContext();
@@ -1315,7 +1346,7 @@ require([
     $("panelTitle").textContent = titles[name];
     document.querySelectorAll(".pane").forEach(p=>p.classList.remove("active"));
     $("pane-"+name).classList.add("active");
-    document.querySelectorAll(".tool").forEach(t=>t.classList.toggle("active", t.dataset.pane===name));
+    document.querySelectorAll(".tool[data-pane]").forEach(t=>t.classList.toggle("active", t.dataset.pane===name));
     // first time the Open pane is shown, load the gallery automatically
     if(name==="open" && $("webmapResults") && !$("webmapResults").dataset.loaded){
       $("webmapResults").dataset.loaded = "1";
@@ -1325,9 +1356,9 @@ require([
   function closePanel(){
     currentPane=null;
     $("panel").classList.remove("open");
-    document.querySelectorAll(".tool").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".tool[data-pane]").forEach(t=>t.classList.remove("active"));
   }
-  document.querySelectorAll(".tool").forEach(t=>t.addEventListener("click", ()=>openPane(t.dataset.pane)));
+  document.querySelectorAll(".tool[data-pane]").forEach(t=>t.addEventListener("click", ()=>openPane(t.dataset.pane)));
   $("panelClose").addEventListener("click", closePanel);
 
   /* ---------- add public layers ---------- */
@@ -1701,7 +1732,7 @@ require([
   }
 
   /* ---------- header buttons + modals ---------- */
-  $("btn3D").addEventListener("click", ()=>{ setView(is3D ? "2d" : "3d", true); });
+  $("btnView3D").addEventListener("click", ()=>{ setView(is3D ? "2d" : "3d", true); });
 
   /* ===== TEMPORARY troubleshooting tool ===== */
   function webglInfo(){
