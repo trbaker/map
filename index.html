@@ -243,6 +243,14 @@
     box-shadow:0 0 0 1px var(--border);cursor:pointer;padding:0;transition:transform .12s ease,box-shadow .12s ease}
   .swatch-btn:hover{transform:scale(1.08)}
   .swatch-btn.active{box-shadow:0 0 0 2px var(--ink-900);transform:scale(1.08)}
+  .marker-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:4px}
+  .marker-btn{width:38px;height:38px;border:1px solid var(--border);border-radius:var(--radius-md);
+    background:var(--surface);color:var(--ink-800);cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;
+    transition:transform .12s ease,border-color .12s ease,background .12s ease}
+  .marker-btn svg{width:22px;height:22px;display:block}
+  .marker-btn:hover{transform:translateY(-1px);border-color:var(--ink-300);background:var(--ink-50)}
+  .marker-btn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .btn.block{width:100%;margin-top:14px}
   .custom-color{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:var(--text-xs);color:var(--text-soft)}
   .custom-color input[type=color]{width:44px;height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);
     background:var(--surface);cursor:pointer;padding:2px}
@@ -297,6 +305,44 @@
   .ws-task .hint{display:block;font-size:var(--text-xs);color:var(--text-mute);margin-top:3px}
   .ws-placeholder{border:1px dashed var(--ink-300);border-radius:var(--radius-lg);padding:18px;background:var(--ink-50);color:var(--text-soft);font-size:var(--text-sm);line-height:1.6}
   .ws-placeholder b{color:var(--ink-900)}
+
+  /* Attribute table — docked over the bottom half of the map */
+  #tablePanel{
+    position:absolute;left:0;right:0;bottom:0;height:50%;z-index:21;
+    background:var(--surface);border-top:1px solid var(--border);
+    box-shadow:0 -12px 30px rgba(42,38,34,.16);
+    display:none;flex-direction:column;
+  }
+  #tablePanel.open{display:flex;animation:tblIn .18s ease}
+  @keyframes tblIn{from{transform:translateY(14px);opacity:.4}to{transform:translateY(0);opacity:1}}
+  .tbl-head{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    padding:9px 14px;border-bottom:1px solid var(--border);background:var(--ink-50)}
+  .tbl-head strong{font-family:var(--font-display);font-size:var(--text-base);color:var(--ink-950)}
+  .tbl-count{font-size:var(--text-xs);color:var(--text-mute);margin-left:8px}
+  .tbl-head-right{display:flex;align-items:center;gap:8px}
+  .btn.small{padding:6px 11px;font-size:var(--text-xs)}
+  .btn.small:disabled{opacity:.45;cursor:not-allowed}
+  .tbl-body{flex:1;overflow:auto}
+  .tbl-loading{padding:18px;color:var(--text-soft);font-size:var(--text-sm)}
+  table.tbl{border-collapse:collapse;width:100%;font-size:var(--text-xs);font-family:var(--font-mono)}
+  table.tbl th{position:sticky;top:0;background:var(--ink-100);color:var(--ink-900);text-align:left;
+    padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;z-index:1}
+  table.tbl th .th-label{cursor:pointer;user-select:none}
+  table.tbl th .th-label:hover{color:var(--accent)}
+  .tbl-stats{border:none;background:none;cursor:pointer;margin-left:6px;font-size:12px;padding:0 2px;line-height:1}
+  table.tbl td{padding:6px 10px;border-bottom:1px solid var(--border-soft);white-space:nowrap;
+    max-width:260px;overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+  table.tbl tbody tr{cursor:pointer}
+  table.tbl tbody tr:hover{background:var(--ink-50)}
+  table.tbl tbody tr.sel{background:var(--accent-soft)}
+  .stats-pop{position:fixed;z-index:200;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-md);box-shadow:0 10px 30px rgba(42,38,34,.2);padding:12px 14px;width:206px;font-size:var(--text-xs)}
+  .stats-pop .sp-title{font-weight:700;margin-bottom:8px;color:var(--ink-950);font-family:var(--font-display);font-size:var(--text-sm)}
+  .stats-pop .sp-row{display:flex;justify-content:space-between;padding:3px 0;color:var(--text-soft)}
+  .stats-pop .sp-row b{color:var(--ink-900);font-family:var(--font-mono)}
+  .stats-pop .sp-close{margin-top:10px;width:100%;border:1px solid var(--border);background:var(--ink-50);
+    border-radius:var(--radius-sm);padding:6px;cursor:pointer;font-size:var(--text-xs);color:var(--text)}
+  .stats-pop .sp-close:hover{background:var(--ink-100)}
   #footer{
     position:absolute;left:0;right:0;bottom:0;height:28px;z-index:5;
     display:flex;align-items:center;gap:20px;padding:0 14px;
@@ -437,8 +483,20 @@
 
         <!-- Sketch -->
         <div class="pane" id="pane-sketch">
-          <p class="hint">Pick a color, then draw points, lines, and shapes with the tools below — or add a text label. To recolor something, select it, then pick a new color.</p>
-          <label class="field-label">Drawing color</label>
+          <p class="hint">Draw on the map, choose how your points look, then pick a color. To recolor something, select it and pick a new color.</p>
+
+          <label class="field-label">1. Draw points, lines, and shapes</label>
+          <div id="sketchHost" class="widget-host"></div>
+          <div class="btn-row">
+            <button class="btn" id="freeLineBtn">〰️ Freeform line</button>
+            <button class="btn" id="addTextBtn">✎ Add text</button>
+          </div>
+
+          <label class="field-label">2. Customize the point marker</label>
+          <p class="hint" style="margin:0 0 8px">Pick a marker shape for the point tool — including digital map pins.</p>
+          <div class="marker-row" id="markerStyles"></div>
+
+          <label class="field-label">3. Choose a color</label>
           <div class="swatch-row" id="colorSwatches">
             <button class="swatch-btn" data-color="#E23B3B" title="Red" style="background:#E23B3B"></button>
             <button class="swatch-btn" data-color="#E8743B" title="Orange" style="background:#E8743B"></button>
@@ -455,12 +513,8 @@
             <label for="customColor">Custom color</label>
             <input type="color" id="customColor" value="#2D72D9" />
           </div>
-          <label class="field-label">Draw points, lines &amp; shapes</label>
-          <div id="sketchHost" class="widget-host"></div>
-          <div class="btn-row">
-            <button class="btn ghost" id="addTextBtn">✎ Add text</button>
-            <button class="btn ghost" id="sketchClear">Erase all</button>
-          </div>
+
+          <button class="btn ghost block" id="sketchClear">Erase all drawings</button>
         </div>
 
         <!-- Place -->
@@ -502,6 +556,16 @@
           <button class="learn-close" id="learnClose" title="Close worksheet">×</button>
         </div>
         <div class="learn-body" id="learnBody"></div>
+      </aside>
+      <aside id="tablePanel" aria-label="Attribute table">
+        <div class="tbl-head">
+          <div><strong id="tableTitle">Data table</strong><span id="tableCount" class="tbl-count"></span></div>
+          <div class="tbl-head-right">
+            <button class="btn small" id="tableZoomBtn" disabled>⌖ Zoom to record</button>
+            <button class="learn-close" id="tableClose" title="Close table">×</button>
+          </div>
+        </div>
+        <div class="tbl-body" id="tableBody"></div>
       </aside>
     </div>
   </div>
@@ -649,7 +713,8 @@ require([
     down:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6l4 4 4-4"/></svg>',
     trash:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.6 9a1 1 0 0 0 1 1h4.8a1 1 0 0 0 1-1L12 4"/></svg>',
     opacity:'<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor" stroke="none"/></svg>',
-    info:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4" stroke-linecap="round"/><circle cx="8" cy="5" r="0.6" fill="currentColor" stroke="none"/></svg>'
+    info:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4" stroke-linecap="round"/><circle cx="8" cy="5" r="0.6" fill="currentColor" stroke="none"/></svg>',
+    table:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.2" y="2.8" width="11.6" height="10.4" rx="1.2"/><path d="M2.2 6.2h11.6M2.2 9.6h11.6M6.4 6.2v7M2.2 6.2v-3.4"/></svg>'
   };
   function llActBtn(svg, title, fn, danger){
     const b = document.createElement("button");
@@ -706,6 +771,10 @@ require([
           window.open(`https://www.arcgis.com/home/item.html?id=${itemId}`, "_blank", "noopener");
         }));
       }
+      // attribute table — only for vector (feature) layers
+      if(layer.type === "feature"){
+        acts.appendChild(llActBtn(LL_ICON.table, "Show data table", ()=>openTable(layer)));
+      }
       // transparency button — currently disabled (inactive / grayed out)
       const opWrap = document.createElement("div"); opWrap.className = "ll-opacity";
       const startT = Math.round((1 - (layer.opacity==null?1:layer.opacity)) * 100);
@@ -732,6 +801,139 @@ require([
   map.layers.on("change", renderLayerList);  // re-render when layers are added, removed, or reordered
   renderLayerList();
 
+  /* ---------- attribute table (vector layers) ---------- */
+  const NUMERIC_TYPES = ["small-integer","integer","single","double","long","oid"];
+  let tableState = { layer:null, features:[], fields:[], sort:{field:null,dir:1}, selected:null };
+  function openTable(layer){
+    if(!layer || layer.type!=="feature"){ toast("This layer doesn't have a data table."); return; }
+    $("tableTitle").textContent = layer.title || "Data table";
+    $("tableCount").textContent = "";
+    $("tableBody").innerHTML = `<p class="tbl-loading">Loading table…</p>`;
+    $("map-wrap").classList.add("table-open");
+    $("tablePanel").classList.add("open");
+    tableState = { layer:layer, features:[], fields:[], sort:{field:null,dir:1}, selected:null };
+    updateZoomBtn();
+    const q = layer.createQuery();
+    q.where = "1=1"; q.outFields = ["*"]; q.returnGeometry = true;
+    q.outSpatialReference = view.spatialReference; q.num = 2000;
+    layer.queryFeatures(q).then(res=>{
+      const feats = res.features || [];
+      feats.forEach((f,i)=> f.__i = i);
+      tableState.features = feats;
+      let fields = (layer.fields || []).filter(f=> f.type !== "geometry");
+      if(!fields.length && feats.length){
+        fields = Object.keys(feats[0].attributes).map(k=>({ name:k, alias:k, type:"string" }));
+      }
+      tableState.fields = fields.map(f=>({ name:f.name, alias:f.alias||f.name, numeric: NUMERIC_TYPES.indexOf(f.type)>-1 }));
+      $("tableCount").textContent = feats.length ? `${feats.length} record${feats.length===1?"":"s"}${feats.length>=2000?" (first 2000)":""}` : "";
+      renderTable();
+    }).catch(e=>{
+      $("tableBody").innerHTML = `<p class="tbl-loading">Sorry — couldn't load this table.</p>`;
+      if(window.__mxlog) window.__mxlog("Table query failed: "+((e&&e.message)||e));
+    });
+  }
+  function renderTable(){
+    const body = $("tableBody");
+    const { features, fields, sort } = tableState;
+    if(!features.length){ body.innerHTML = `<p class="tbl-loading">No records in this layer.</p>`; return; }
+    let rows = features.slice();
+    if(sort.field){
+      const fld = fields.find(f=>f.name===sort.field);
+      rows.sort((a,b)=>{
+        let va=a.attributes[sort.field], vb=b.attributes[sort.field];
+        if(va==null && vb==null) return 0; if(va==null) return 1; if(vb==null) return -1;
+        if(fld && fld.numeric) return (Number(va)-Number(vb))*sort.dir;
+        return String(va).localeCompare(String(vb))*sort.dir;
+      });
+    }
+    let h = "<table class='tbl'><thead><tr>";
+    fields.forEach(f=>{
+      const arrow = sort.field===f.name ? (sort.dir>0 ? " ▲" : " ▼") : "";
+      const statsBtn = f.numeric ? `<button class="tbl-stats" data-f="${escapeHtml(f.name)}" title="Statistics for this column">📊</button>` : "";
+      h += `<th><span class="th-label" data-f="${escapeHtml(f.name)}">${escapeHtml(f.alias)}${arrow}</span>${statsBtn}</th>`;
+    });
+    h += "</tr></thead><tbody>";
+    rows.forEach(feat=>{
+      h += `<tr data-i="${feat.__i}">`;
+      fields.forEach(f=>{ const v=feat.attributes[f.name]; h += `<td>${v==null?"":escapeHtml(String(v))}</td>`; });
+      h += "</tr>";
+    });
+    h += "</tbody></table>";
+    body.innerHTML = h;
+    body.querySelectorAll(".th-label").forEach(lbl=>{
+      lbl.addEventListener("click", ()=>{
+        const f = lbl.getAttribute("data-f");
+        if(tableState.sort.field===f) tableState.sort.dir *= -1; else tableState.sort = { field:f, dir:1 };
+        renderTable();
+      });
+    });
+    body.querySelectorAll(".tbl-stats").forEach(btn=>{
+      btn.addEventListener("click", (e)=>{ e.stopPropagation(); showColumnStats(btn.getAttribute("data-f"), btn); });
+    });
+    const byIndex = {}; features.forEach(f=> byIndex[f.__i]=f);
+    body.querySelectorAll("tbody tr").forEach(tr=>{
+      tr.addEventListener("click", ()=>{
+        body.querySelectorAll("tbody tr.sel").forEach(r=>r.classList.remove("sel"));
+        tr.classList.add("sel");
+        tableState.selected = byIndex[+tr.getAttribute("data-i")];
+        updateZoomBtn();
+      });
+      tr.addEventListener("dblclick", ()=>{ tableState.selected = byIndex[+tr.getAttribute("data-i")]; updateZoomBtn(); zoomToSelected(); });
+    });
+  }
+  function showColumnStats(fieldName, anchorBtn){
+    const fld = tableState.fields.find(f=>f.name===fieldName);
+    const vals = tableState.features.map(f=>f.attributes[fieldName])
+                   .filter(v=> v!=null && v!=="" && !isNaN(Number(v))).map(Number);
+    const existing = document.getElementById("statsPop"); if(existing) existing.remove();
+    if(!vals.length){ toast("No numeric values in this column."); return; }
+    const n=vals.length, sum=vals.reduce((a,b)=>a+b,0), mean=sum/n;
+    const sorted=vals.slice().sort((a,b)=>a-b), min=sorted[0], max=sorted[n-1];
+    const median = n%2 ? sorted[(n-1)/2] : (sorted[n/2-1]+sorted[n/2])/2;
+    const std = Math.sqrt(vals.reduce((a,b)=>a+(b-mean)*(b-mean),0)/n);
+    const fmt = (x)=> (Math.abs(x)>=1000) ? Number(x).toLocaleString(undefined,{maximumFractionDigits:2}) : (Math.round(x*1000)/1000);
+    const pop = document.createElement("div"); pop.id="statsPop"; pop.className="stats-pop";
+    pop.innerHTML =
+      `<div class="sp-title">${escapeHtml(fld.alias)}</div>`+
+      `<div class="sp-row"><span>Count</span><b>${n}</b></div>`+
+      `<div class="sp-row"><span>Minimum</span><b>${fmt(min)}</b></div>`+
+      `<div class="sp-row"><span>Maximum</span><b>${fmt(max)}</b></div>`+
+      `<div class="sp-row"><span>Mean</span><b>${fmt(mean)}</b></div>`+
+      `<div class="sp-row"><span>Median</span><b>${fmt(median)}</b></div>`+
+      `<div class="sp-row"><span>Sum</span><b>${fmt(sum)}</b></div>`+
+      `<div class="sp-row"><span>Std. dev.</span><b>${fmt(std)}</b></div>`+
+      `<button class="sp-close">Close</button>`;
+    document.body.appendChild(pop);
+    const r = anchorBtn.getBoundingClientRect();
+    pop.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 220)) + "px";
+    pop.style.top  = Math.min(r.bottom + 6, window.innerHeight - pop.offsetHeight - 8) + "px";
+    pop.querySelector(".sp-close").addEventListener("click", ()=>pop.remove());
+    setTimeout(()=>{ document.addEventListener("click", function h(ev){ if(!pop.contains(ev.target)){ pop.remove(); document.removeEventListener("click", h); } }); }, 0);
+  }
+  function updateZoomBtn(){ const b=$("tableZoomBtn"); if(b) b.disabled = !tableState.selected; }
+  function zoomToSelected(){
+    const feat = tableState.selected;
+    if(!feat || !feat.geometry){ toast("Pick a record in the table first."); return; }
+    const g = feat.geometry;
+    const opts = (g.type==="point") ? { target:g, scale:7500 } : { target:(g.extent || g) };
+    view.goTo(opts).catch(()=>{});
+    const layer = tableState.layer;
+    if(layer && view.whenLayerView){
+      view.whenLayerView(layer).then(lv=>{
+        try{
+          const oid = layer.objectIdField ? feat.attributes[layer.objectIdField] : null;
+          const h = lv.highlight(oid!=null ? oid : feat);
+          setTimeout(()=>{ try{ h.remove(); }catch(e){} }, 3000);
+        }catch(e){}
+      }).catch(()=>{});
+    }
+  }
+  function closeTable(){ $("tablePanel").classList.remove("open"); $("map-wrap").classList.remove("table-open");
+    const sp=document.getElementById("statsPop"); if(sp) sp.remove(); }
+  $("tableClose").addEventListener("click", closeTable);
+  $("tableZoomBtn").addEventListener("click", zoomToSelected);
+
+
   /* ---------- view + widgets (rebuilt when switching 2D <-> 3D) ---------- */
   let view = null, is3D = false, buildingsLayer = null;
   let search, measurement, sketch, coordWidget;
@@ -741,6 +943,7 @@ require([
 
   /* ---------- sketch drawing color ---------- */
   let currentSketchColor = "#2D72D9";
+  let currentPointStyle  = "circle";
   let selectedSketchGraphics = [];
   function hexToRgb(hex){
     hex = String(hex).replace("#","");
@@ -748,13 +951,29 @@ require([
     const n = parseInt(hex,16);
     return [(n>>16)&255, (n>>8)&255, n&255];
   }
+  // map-pin (teardrop) paths — the point sits at the bottom tip
+  const PIN_PATH = "M11 0C6.6 0 3 3.6 3 8c0 5.6 8 14 8 14s8-8.4 8-14c0-4.4-3.6-8-8-8z";
+  const PIN_DOT_PATH = PIN_PATH + "M11 5.2A2.8 2.8 0 1 0 11.001 10.8 2.8 2.8 0 0 0 11 5.2z";
+  function pointSymbol(hex, style){
+    style = style || currentPointStyle || "circle";
+    const c = hexToRgb(hex);
+    if(style==="pin" || style==="pin-dot"){
+      const size = 22;
+      return { type:"simple-marker", style:"path",
+               path: (style==="pin-dot" ? PIN_DOT_PATH : PIN_PATH),
+               color:c.concat(1), size:size,
+               outline:{ color:[42,38,34,0.85], width:1 },
+               yoffset: Math.round(size/2) };       // lift so the tip rests on the point
+    }
+    return { type:"simple-marker", style: style, color:c.concat(1), size:11,
+             outline:{ color:[42,38,34,0.85], width:1.25 } };
+  }
   function sketchSymbols(hex){
     const c = hexToRgb(hex);
     return {
-      point:{ type:"simple-marker", style:"circle", color:c.concat(1), size:9,
-              outline:{ color:[42,38,34,0.85], width:1.25 } },
-      line: { type:"simple-line", color:c, width:3 },
-      poly: { type:"simple-fill", color:c.concat(0.30), outline:{ color:c, width:2 } }
+      point: pointSymbol(hex, currentPointStyle),
+      line:  { type:"simple-line", color:c, width:3 },
+      poly:  { type:"simple-fill", color:c.concat(0.30), outline:{ color:c, width:2 } }
     };
   }
   function textSymbol(hex, text){
@@ -764,11 +983,54 @@ require([
   function recolorGraphic(g, hex){
     if(!g || !g.geometry) return;
     const sym = g.symbol;
-    if(sym && sym.type === "text"){            // keep the label, just change its color
+    if(sym && (sym.type === "text" || sym.type === "simple-marker")){  // keep the shape, change color
       const clone = sym.clone(); clone.color = hex; g.symbol = clone; return;
     }
     const s = sketchSymbols(hex), t = g.geometry.type;
-    g.symbol = (t==="point"||t==="multipoint") ? s.point : (t==="polyline") ? s.line : s.poly;
+    g.symbol = (t==="polyline") ? s.line : s.poly;
+  }
+  // marker-shape choices for the point tool (incl. digital map pins)
+  const POINT_STYLES = [
+    {id:"circle",label:"Circle"},{id:"square",label:"Square"},{id:"diamond",label:"Diamond"},
+    {id:"triangle",label:"Triangle"},{id:"cross",label:"Cross"},{id:"x",label:"X"},
+    {id:"pin",label:"Map pin"},{id:"pin-dot",label:"Map pin (ring)"}
+  ];
+  function markerPreview(id){
+    switch(id){
+      case "circle":   return '<circle cx="11" cy="11" r="6"/>';
+      case "square":   return '<rect x="5" y="5" width="12" height="12" rx="1"/>';
+      case "diamond":  return '<path d="M11 4l7 7-7 7-7-7z"/>';
+      case "triangle": return '<path d="M11 4l7 13H4z"/>';
+      case "cross":    return '<path d="M9 3h4v6h6v4h-6v6H9v-6H3V9h6z"/>';
+      case "x":        return '<path d="M5 7l2-2 4 4 4-4 2 2-4 4 4 4-2 2-4-4-4 4-2-2 4-4z"/>';
+      case "pin":      return '<path d="M11 2C7.7 2 5 4.7 5 8c0 4.2 6 11 6 11s6-6.8 6-11c0-3.3-2.7-6-6-6z"/>';
+      case "pin-dot":  return '<path d="M11 2C7.7 2 5 4.7 5 8c0 4.2 6 11 6 11s6-6.8 6-11c0-3.3-2.7-6-6-6z"/><circle cx="11" cy="8" r="2.1" fill="#fff"/>';
+    }
+    return "";
+  }
+  function renderMarkerStyles(){
+    const box = $("markerStyles"); if(!box) return;
+    box.innerHTML = "";
+    POINT_STYLES.forEach(st=>{
+      const b = document.createElement("button");
+      b.className = "marker-btn" + (st.id===currentPointStyle ? " active" : "");
+      b.dataset.style = st.id; b.title = st.label; b.setAttribute("aria-label", st.label);
+      b.innerHTML = `<svg viewBox="0 0 22 22" fill="currentColor">${markerPreview(st.id)}</svg>`;
+      b.addEventListener("click", ()=>setPointStyle(st.id));
+      box.appendChild(b);
+    });
+  }
+  function setPointStyle(id){
+    currentPointStyle = id;
+    document.querySelectorAll("#markerStyles .marker-btn").forEach(b=>b.classList.toggle("active", b.dataset.style===id));
+    if(sketch) sketch.pointSymbol = pointSymbol(currentSketchColor, id);
+    selectedSketchGraphics.forEach(g=>{
+      const t = g.geometry && g.geometry.type;
+      if((t==="point"||t==="multipoint") && g.symbol && g.symbol.type!=="text"){
+        g.symbol = pointSymbol(currentSketchColor, id);
+      }
+    });
+    toast("Marker shape set — new points use this style.");
   }
   // text tool: type a label, then click the map to place it (in the current color)
   let textClickHandle = null;
@@ -789,6 +1051,8 @@ require([
       toast("Text added. Use the Sketch select tool to move it.");
     });
   }
+  // freeform (freehand) line tool
+  function armFreeformLine(){ if(sketch){ try{ sketch.create("polyline", { mode:"freehand" }); }catch(e){} } }
   function applySketchColor(hex, fromUser){
     currentSketchColor = hex;
     if(sketch){
@@ -800,7 +1064,6 @@ require([
     if(fromUser && selectedSketchGraphics.length){
       selectedSketchGraphics.forEach(g=>recolorGraphic(g, hex));
     }
-    // reflect active swatch
     document.querySelectorAll("#colorSwatches .swatch-btn").forEach(b=>{
       b.classList.toggle("active", (b.dataset.color||"").toLowerCase()===hex.toLowerCase());
     });
@@ -1030,6 +1293,8 @@ require([
   });
   $("customColor").addEventListener("input", (e)=>applySketchColor(e.target.value, true));
   $("addTextBtn").addEventListener("click", armTextTool);
+  $("freeLineBtn").addEventListener("click", armFreeformLine);
+  renderMarkerStyles();   // populate the point-marker shape picker
   $("coordOut").addEventListener("click", ()=>{
     const txt = $("coordOut").textContent;
     if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>toast("Coordinates copied"));
