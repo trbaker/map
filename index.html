@@ -225,6 +225,13 @@
   .empty{font-size:var(--text-sm);color:var(--text-mute);font-style:italic;padding:8px 0}
 
   .widget-host{margin-top:8px}
+  /* extra sketch tools (text, freeform) styled to match the Sketch widget's tool buttons */
+  .sk-xbar{display:inline-flex;margin-top:8px;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--white)}
+  .sk-xbtn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+    border:0;border-left:1px solid var(--border);background:var(--white);color:var(--ink-800);cursor:pointer;padding:0}
+  .sk-xbtn:first-child{border-left:0}
+  .sk-xbtn:hover{background:var(--ink-50);color:var(--ink-950)}
+  .sk-xbtn svg{width:18px;height:18px;display:block}
   .esri-basemap-gallery{background:transparent}
 
   /* basemap thumbnail grid */
@@ -499,9 +506,9 @@
 
           <label class="field-label">1. Draw points, lines, and shapes</label>
           <div id="sketchHost" class="widget-host"></div>
-          <div class="btn-row">
-            <button class="btn" id="freeLineBtn">〰️ Freeform line</button>
-            <button class="btn" id="addTextBtn">✎ Add text</button>
+          <div class="sk-xbar">
+            <button class="sk-xbtn" id="freeLineBtn" title="Freeform line" aria-label="Freeform line"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 11c1.6-4.5 3.6 4.5 5.2 0S11 6.5 12.5 11s2 .4 3.5-1.5"/></svg></button>
+            <button class="sk-xbtn" id="addTextBtn" title="Add text" aria-label="Add text"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h10M9 5v9"/></svg></button>
           </div>
 
           <label class="field-label">2. Customize the point marker</label>
@@ -654,6 +661,41 @@ require([
   const addedLayers = [];
   function registerLayer(layer){ if(layer && addedLayers.indexOf(layer)===-1) addedLayers.push(layer); }
 
+  // ----- default layer draw-order policy -----
+  // Sketch (top), point, line, polygon/area, imagery/tile, basemap (bottom).
+  // Opening a saved/gallery map or a manual reorder turns this off (they "override").
+  let autoLayerOrder = true;
+  let _reordering = false;
+  function layerRank(l){
+    if(l===placeLayer) return 100;           // the Place pin, always on top
+    if(l===sketchLayer) return 95;           // Sketch layer
+    const t = l.type, g = l.geometryType;
+    if(t==="graphics") return 90;
+    if(t==="feature" || t==="geojson" || t==="csv"){
+      if(g==="point" || g==="multipoint") return 80;
+      if(g==="polyline") return 70;
+      if(g==="polygon" || g==="multipatch") return 60;
+      return 55;                              // unknown vector geometry
+    }
+    if(["map-image","tile","imagery","imagery-tile","vector-tile","web-tile","wms","wmts"].indexOf(t) > -1) return 20;
+    return 40;                                // anything else, middle
+  }
+  function enforceLayerOrder(){
+    if(_reordering) return;
+    _reordering = true;
+    try{
+      if(autoLayerOrder){
+        const wi = map.layers.toArray().map((l,i)=>({ l, i }));
+        wi.sort((a,b)=> (layerRank(a.l)-layerRank(b.l)) || (a.i-b.i));   // ascending: bottom→top, stable
+        wi.forEach((o,idx)=>{ try{ map.layers.reorder(o.l, idx); }catch(e){} });
+      } else {
+        // respect the map's own order, but keep the drawing + place overlays on top
+        if(map.layers.includes(sketchLayer)) map.layers.reorder(sketchLayer, map.layers.length-1);
+        if(map.layers.includes(placeLayer))  map.layers.reorder(placeLayer,  map.layers.length-1);
+      }
+    } finally { _reordering = false; }
+  }
+
   /* ---------- search source (place / address, free OpenStreetMap) ---------- */
   const osmSource = {
     name: "Places & addresses",
@@ -775,6 +817,7 @@ require([
     return b;
   }
   function moveLayer(layer, dir){
+    autoLayerOrder = false;   // user is taking control of order
     const arr = map.layers.toArray();
     const i = arr.indexOf(layer), j = i + dir;
     if(j < 0 || j >= arr.length) return;
@@ -783,11 +826,8 @@ require([
   }
   function renderLayerList(){
     const box = $("layerListCustom"); if(!box) return;
-    // top of the list = top of the map; hide internal layers (e.g. the place pin)
+    // the list mirrors the map's draw order (top of list = top of map); hide internal layers (e.g. the place pin)
     const layers = map.layers.toArray().filter(l=>l.listMode!=="hide").reverse();
-    // "My drawings" always sits at the top of the list
-    const si = layers.indexOf(sketchLayer);
-    if(si > 0){ layers.splice(si, 1); layers.unshift(sketchLayer); }
     box.innerHTML = "";
     if(!layers.length){ box.innerHTML = `<p class="ll-empty">No layers yet. Add data, draw something, or pick a basemap.</p>`; return; }
     layers.forEach(layer=>{
@@ -1399,6 +1439,7 @@ require([
         if(!layer.title || layer.title === "Layer"){ // fallback to the loaded portal-item name
           layer.title = (layer.portalItem && layer.portalItem.title) || title || "Layer";
         }
+        enforceLayerOrder();                          // slot it into the default draw order (by geometry type)
         renderLayerList();                            // refresh the list now the name is known
         if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{});
       });
@@ -1513,6 +1554,8 @@ require([
       const layers = wm.layers.toArray();
       wm.layers.removeAll();                            // detach from the temp web map
       layers.forEach(l=>{ map.add(l); registerLayer(l); });
+      autoLayerOrder = false;                  // the opened map's own order takes over
+      enforceLayerOrder();                     // but keep the drawing + place overlays on top
       if(map.layers.includes(placeLayer)) map.layers.reorder(placeLayer, map.layers.length-1);
       // go to the map's saved viewpoint, else frame the first layer
       const vp = wm.initialViewProperties && wm.initialViewProperties.viewpoint;
@@ -1563,7 +1606,8 @@ require([
     if(!subLayers.length) return null;
     return {
       id:"mapexplorer-drawings", title:"Sketch layer", layerType:"ArcGISFeatureLayer",
-      opacity:1, visibility:true, mapexplorerSketch:true,
+      opacity:(sketchLayer.opacity==null?1:sketchLayer.opacity), visibility:(sketchLayer.visible!==false),
+      mapexplorerSketch:true,
       featureCollection:{ layers:subLayers }
     };
   }
@@ -1695,10 +1739,12 @@ require([
 
     const ops = json.operationalLayers || [];
     const tasks = [];
-    ops.forEach(op=>{
+    ops.forEach((op, opIndex)=>{
       if(op.mapexplorerSketch || op.mapfusionSketch || op.mapmakerSketch ||
          (op.featureCollection && ["mapexplorer-drawings","mapfusion-drawings","mapmaker-drawings"].indexOf(op.id)>-1)){
         // rebuild editable drawings (incl. uploaded data) with attributes + popups
+        if(op.opacity!=null) sketchLayer.opacity = op.opacity;          // restore transparency
+        if(op.visibility!=null) sketchLayer.visible = op.visibility;
         (op.featureCollection.layers||[]).forEach(sub=>{
           (sub.featureSet && sub.featureSet.features || []).forEach(f=>{
             try{
@@ -1715,7 +1761,7 @@ require([
       if(op.layerType==="VectorTileLayer" || op.styleUrl){
         const u = op.styleUrl || op.url;
         if(u){
-          try{ const l = new VectorTileLayer({ url:u }); applyOpProps(l, op); map.add(l); registerLayer(l); }catch(e){}
+          try{ const l = new VectorTileLayer({ url:u }); l.__ord=opIndex; applyOpProps(l, op); map.add(l); registerLayer(l); }catch(e){}
         }
         return;
       }
@@ -1723,23 +1769,28 @@ require([
       if(op.layerType==="WebTiledLayer" || op.templateUrl){
         const tpl = op.templateUrl || op.urlTemplate;
         if(tpl){
-          try{ const l = new WebTileLayer({ urlTemplate:tpl }); applyOpProps(l, op); map.add(l); registerLayer(l); }catch(e){}
+          try{ const l = new WebTileLayer({ urlTemplate:tpl }); l.__ord=opIndex; applyOpProps(l, op); map.add(l); registerLayer(l); }catch(e){}
         }
         return;
       }
       if(op.url){
         // handles ArcGIS feature / tiled map / image / map-image services by reference
         tasks.push(Layer.fromArcGISServerUrl({ url:op.url }).then(layer=>{
-          applyOpProps(layer, op); map.add(layer); registerLayer(layer);
+          layer.__ord=opIndex; applyOpProps(layer, op); map.add(layer); registerLayer(layer);
         }).catch(()=>{}));
       } else if(op.itemId){
         tasks.push(Layer.fromPortalItem({ portalItem:new PortalItem({ id:op.itemId }) }).then(layer=>{
-          applyOpProps(layer, op); map.add(layer); registerLayer(layer);
+          layer.__ord=opIndex; applyOpProps(layer, op); map.add(layer); registerLayer(layer);
         }).catch(()=>{}));
       }
     });
 
     Promise.all(tasks).then(()=>{
+      // reproduce the saved draw order (operationalLayers are bottom → top)
+      const ordered = map.layers.toArray().filter(l=> typeof l.__ord === "number").sort((a,b)=> a.__ord - b.__ord);
+      ordered.forEach((l, idx)=>{ try{ map.layers.reorder(l, idx); }catch(e){} });
+      autoLayerOrder = false;     // the saved map's order takes over
+      enforceLayerOrder();        // keep the drawing + place overlays on top
       restoreViewState(json);
       const name = (json.mapexplorerMeta && json.mapexplorerMeta.title) || (json.mapfusionMeta && json.mapfusionMeta.title) || (json.mapmakerMeta && json.mapmakerMeta.title) || "map";
       const realTitle = (json.mapexplorerMeta && json.mapexplorerMeta.title) || (json.mapfusionMeta && json.mapfusionMeta.title) || (json.mapmakerMeta && json.mapmakerMeta.title) || "";
