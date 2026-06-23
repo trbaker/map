@@ -268,6 +268,9 @@
   .place-info .pi-hint{font-size:var(--text-xs);color:var(--text-mute);font-style:italic;line-height:1.45}
 
   /* Help list */
+  .help-credit{background:var(--ink-50);border:1px solid var(--border);border-radius:var(--radius-md);
+    padding:11px 13px;margin:0 0 14px;font-size:var(--text-sm);line-height:1.55;color:var(--text-soft)}
+  .help-credit a{color:var(--accent);font-weight:600;word-break:break-all}
   .help-item{display:flex;gap:11px;margin-bottom:13px}
   .help-item .k{font-size:18px;width:24px;text-align:center;flex:0 0 24px}
   .help-item .t{font-size:var(--text-sm);line-height:1.5;color:var(--text-soft)}
@@ -396,7 +399,7 @@
 <body>
 <div id="app">
   <header>
-    <div class="brand"><svg class="brand-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/></svg><b>Map Explorer</b><span id="mapTitleLabel" class="map-title"></span></div>
+    <div class="brand"><svg class="brand-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/></svg><b>Map Explorer</b><span class="brand-ver">.9 beta</span><span id="mapTitleLabel" class="map-title"></span></div>
     <div class="spacer"></div>
     <button id="btnLearn" title="Open the lesson worksheet for this map">📖 Learn</button>
     <button id="btnDebug" class="temp-btn" title="Troubleshooting info (temporary)" style="display:none">🐞 Debug</button>
@@ -529,6 +532,7 @@
 
         <!-- Help -->
         <div class="pane" id="pane-help">
+          <p class="help-credit">The Map Explorer was designed by Tom Baker of the Esri Education Team. This tool is at: <a href="https://trbaker.github.io/map" target="_blank" rel="noopener">https://trbaker.github.io/map</a></p>
           <p class="hint">A quick tour of every tool. GIS stands for <b>Geographic Information System</b> — software for making and studying maps.</p>
           <div class="help-item"><span class="k">🗺️</span><span class="t"><b>Basemap</b> — change the background map (satellite, streets, topographic…).</span></div>
           <div class="help-item"><span class="k">➕</span><span class="t"><b>Add data</b> — find free public map layers and add them on top.</span></div>
@@ -695,7 +699,6 @@ require([
           .catch(()=>{});
         return bm;
       } },
-    { id:"osm", label:"OpenStreetMap", make:()=>Basemap.fromId("osm") },
     { id:"osm-hot", label:"OSM Humanitarian",
       thumb:"https://a.tile.openstreetmap.fr/hot/5/8/12.png",
       make:()=>new Basemap({ title:"OpenStreetMap (Humanitarian)", baseLayers:[ new WebTileLayer({
@@ -1429,7 +1432,8 @@ require([
       fetch(groupUrl).then(r=>r.json()).catch(()=>({})),
       fetch(pubUrl).then(r=>r.json()).catch(()=>({}))
     ]).then(([g, p])=>{
-      const groupItems = (g.results || []);
+      // only items that are publicly accessible (no ArcGIS sign-in required)
+      const groupItems = (g.results || []).filter(it=>it.access==="public");
       groupItems.forEach(it=>it._featured = true);
       const seen = new Set(groupItems.map(it=>it.id));
       const pubItems = (p.results || []).filter(it=>it.access==="public" && !seen.has(it.id));
