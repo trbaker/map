@@ -414,7 +414,7 @@
 <body>
 <div id="app">
   <header>
-    <div class="brand"><svg class="brand-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/></svg><b>Map Explorer</b><span class="brand-ver">.9</span><span id="mapTitleLabel" class="map-title"></span></div>
+    <div class="brand"><svg class="brand-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/></svg><b>Map Explorer</b><span class="brand-ver">.91</span><span id="mapTitleLabel" class="map-title"></span></div>
     <div class="spacer"></div>
     <button id="btnLearn" title="Open the lesson worksheet for this map">📖 Learn</button>
     <button id="btnDebug" class="temp-btn" title="Troubleshooting info (temporary)" style="display:none">🐞 Debug</button>
@@ -1138,6 +1138,7 @@ require([
     if(textClickHandle){ try{ textClickHandle.remove(); }catch(e){} textClickHandle = null; }
     toast("Now click the map to place your text.");
     textClickHandle = view.on("click", (evt)=>{
+      if(currentPane !== "sketch"){ if(textClickHandle){ textClickHandle.remove(); textClickHandle = null; } return; } // abandoned: cancel arming
       if(evt.stopPropagation) evt.stopPropagation();
       const pt = evt.mapPoint;
       if(textClickHandle){ textClickHandle.remove(); textClickHandle = null; }

@@ -23,4 +23,11 @@
 # ----------------------------------------------------------------------------
 # EXAMPLES (replace with your real map ids and lesson URLs):
 #
-# 491d9c86abca41acb04034aa9f4b36a9, https://trbaker.github.io/map/learn/491d9c86abca41acb04034aa9f4b36a9.html
+# 36443e9570294a1f883b5d2c5abfe6b5, https://trbaker.github.io/map/lessons/rivers.html
+# a1b2c3d4e5f60718293a4b5c6d7e8f90, https://docs.google.com/document/d/EXAMPLE/pub
+# 0f1e2d3c4b5a69788796a5b4c3d2e1f0, https://example.org/lessons/earthquakes.pdf
+
+# ----------------------------------------------------------------------------
+# ACTIVE LINKS
+# ----------------------------------------------------------------------------
+491d9c86abca41acb04034aa9f4b36a9, https://trbaker.github.io/map/learn/491d9c86abca41acb04034aa9f4b36a9.html
