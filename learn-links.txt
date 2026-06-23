@@ -1,0 +1,26 @@
+# Map Explorer — Learn document links
+#
+# This file links an ArcGIS Online MAP ITEM ID to the URL of a "Learn"
+# document (a lesson/worksheet web page, Google Doc, PDF, etc.) for that map.
+#
+# When a map is opened from ArcGIS Online, Map Explorer looks up the map's
+# item id here. If a URL is found, that document is loaded into the Learn
+# window (the 📖 Learn panel) so students see the lesson beside the map.
+#
+# FORMAT (one entry per line):
+#   <itemId>, <url>
+#
+# - The item id is the 32-character ArcGIS Online id of the WEB MAP
+#   (the value after id= in https://www.arcgis.com/home/item.html?id=...).
+# - Separate the id and the url with a comma (a space also works).
+# - Blank lines and lines beginning with "#" are ignored.
+# - The document should be embeddable in a frame; pages that block framing
+#   will still offer an "Open in a new tab" link in the Learn panel.
+#
+# Place this file in the SAME folder as map-explorer-gis.html when you deploy
+# (for example, next to the page at https://trbaker.github.io/map/).
+#
+# ----------------------------------------------------------------------------
+# EXAMPLES (replace with your real map ids and lesson URLs):
+#
+# 491d9c86abca41acb04034aa9f4b36a9, https://trbaker.github.io/map/learn/491d9c86abca41acb04034aa9f4b36a9.html
