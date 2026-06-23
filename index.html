@@ -685,6 +685,15 @@ require([
   let currentBasemapId = "topo-vector";
   // OpenStreetMap basemaps offered in 3D (all key-free; render in SceneView).
   const OSM_3D = [
+    { id:"osm-3d-buildings", label:"OSM 3D Buildings",
+      make:()=>{
+        const bm = Basemap.fromId("osm");  // OpenStreetMap ground
+        // add the OSM 3D Buildings scene layer (Esri Living Atlas, public) on top
+        Layer.fromPortalItem({ portalItem:new PortalItem({ id:"ca0470dbbddb4db28bad74ed39949e25" }) })
+          .then(l=>{ l.title="OpenStreetMap 3D Buildings"; try{ bm.referenceLayers.add(l); }catch(e){} })
+          .catch(()=>{});
+        return bm;
+      } },
     { id:"osm", label:"OpenStreetMap", make:()=>Basemap.fromId("osm") },
     { id:"osm-hot", label:"OSM Humanitarian",
       thumb:"https://a.tile.openstreetmap.fr/hot/5/8/12.png",
@@ -1268,14 +1277,7 @@ require([
   /* ---------- 3D context: real ArcGIS 3D services (terrain + OSM buildings) ---------- */
   function add3DContext(){
     map.ground = "world-elevation"; // Esri WorldElevation3D / Terrain3D
-    if(buildingsLayer){
-      if(!map.layers.includes(buildingsLayer)) map.add(buildingsLayer);
-      return;
-    }
-    // OpenStreetMap 3D Buildings (Esri Living Atlas, public)
-    Layer.fromPortalItem({ portalItem:new PortalItem({ id:"ca0470dbbddb4db28bad74ed39949e25" }) })
-      .then(l=>{ l.title="3D Buildings (OpenStreetMap)"; l.listMode="show"; buildingsLayer=l; if(is3D) map.add(l); window.__mxlog && window.__mxlog("OSM 3D buildings layer loaded"); })
-      .catch(e=>{ window.__mxlog && window.__mxlog("OSM 3D buildings failed to load: "+((e&&e.message)||e)); });
+    // 3D buildings are now offered as a basemap option (see OSM_3D), not force-loaded
   }
   function remove3DContext(){
     if(buildingsLayer && map.layers.includes(buildingsLayer)) map.remove(buildingsLayer);
