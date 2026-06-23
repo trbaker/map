@@ -208,7 +208,7 @@
   .ll-vis.off{color:var(--ink-300)}
   .ll-body{flex:1;min-width:0}
   .ll-name{font-size:var(--text-sm);font-weight:600;color:var(--ink-900);line-height:1.25;word-break:break-word}
-  .ll-actions{display:flex;gap:5px;margin-top:7px}
+  .ll-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
   .ll-act{width:26px;height:26px;border:1px solid var(--border);background:var(--surface);
     border-radius:var(--radius-sm);cursor:pointer;color:var(--ink-600);display:flex;align-items:center;justify-content:center;padding:0;
     transition:background .12s ease,color .12s ease,border-color .12s ease}
@@ -862,8 +862,8 @@ require([
         ()=>{ if(itemId) window.open(`https://www.arcgis.com/home/item.html?id=${itemId}`, "_blank", "noopener"); });
       if(!itemId){ infoBtn.disabled = true; infoBtn.classList.add("is-disabled"); }
       acts.appendChild(infoBtn);
-      // attribute table — only for vector (feature) layers
-      if(layer.type === "feature"){
+      // attribute table — feature/geojson/csv layers, plus graphics layers (your drawings + uploaded data)
+      if(["feature","geojson","csv","graphics"].indexOf(layer.type) > -1){
         acts.appendChild(llActBtn(LL_ICON.table, "Show data table", ()=>openTable(layer)));
       }
       // transparency: toggles a slider (0% = solid, 100% = invisible)
@@ -900,7 +900,36 @@ require([
   const NUMERIC_TYPES = ["small-integer","integer","single","double","long","oid"];
   let tableState = { layer:null, features:[], fields:[], sort:{field:null,dir:1}, selected:null };
   function openTable(layer){
-    if(!layer || layer.type!=="feature"){ toast("This layer doesn't have a data table."); return; }
+    if(!layer){ return; }
+    const isGraphics = layer.type === "graphics";
+    const queryable  = ["feature","geojson","csv"].indexOf(layer.type) > -1;
+    if(!isGraphics && !queryable){ toast("This layer doesn't have a data table."); return; }
+
+    // graphics layers (your drawings + uploaded CSV/GeoJSON): build the table from the graphics themselves
+    if(isGraphics){
+      const feats = layer.graphics ? layer.graphics.toArray() : [];
+      if(!feats.length){ toast("This layer has nothing to show yet — add data or draw something first."); return; }
+      const keys = [], seen = {};
+      feats.forEach(f=> Object.keys((f.attributes)||{}).forEach(k=>{ if(!seen[k]){ seen[k]=1; keys.push(k); } }));
+      if(!keys.length){ toast("These drawings don't carry any data fields to show in a table."); return; }
+      feats.forEach((f,i)=> f.__i = i);
+      $("tableTitle").textContent = layer.title || "Data table";
+      $("tableBody").innerHTML = "";
+      $("map-wrap").classList.add("table-open");
+      $("tablePanel").classList.add("open");
+      tableState = { layer:layer, features:feats, fields:[], sort:{field:null,dir:1}, selected:null };
+      tableState.fields = keys.map(k=>{
+        const hasVal  = feats.some(f=>{ const v=f.attributes&&f.attributes[k]; return v!=null && v!==""; });
+        const numeric = hasVal && feats.every(f=>{ const v=f.attributes&&f.attributes[k]; return v==null || v==="" || (!isNaN(Number(v)) && isFinite(Number(v))); });
+        return { name:k, alias:k, numeric:numeric };
+      });
+      $("tableCount").textContent = `${feats.length} record${feats.length===1?"":"s"}`;
+      updateZoomBtn();
+      renderTable();
+      return;
+    }
+
+    // feature / geojson / csv layers: query the service
     $("tableTitle").textContent = layer.title || "Data table";
     $("tableCount").textContent = "";
     $("tableBody").innerHTML = `<p class="tbl-loading">Loading table…</p>`;
