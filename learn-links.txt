@@ -1,33 +1,183 @@
 # Map Explorer — Learn document links
 #
-# This file links an ArcGIS Online MAP ITEM ID to the URL of a "Learn"
-# document (a lesson/worksheet web page, Google Doc, PDF, etc.) for that map.
+# Links an ArcGIS Online MAP ITEM ID to the URL of its "Learn" document
+# (a lesson page shown in the 📖 Learn panel beside the map).
 #
 # When a map is opened from ArcGIS Online, Map Explorer looks up the map's
-# item id here. If a URL is found, that document is loaded into the Learn
-# window (the 📖 Learn panel) so students see the lesson beside the map.
+# item id below. If a URL is found, that lesson is loaded into the Learn window.
 #
-# FORMAT (one entry per line):
-#   <itemId>, <url>
+# FORMAT (one entry per line):  <itemId>, <url>
+#   - Blank lines and lines beginning with "#" are ignored.
+#   - A comma or a space may separate the id and the url.
 #
-# - The item id is the 32-character ArcGIS Online id of the WEB MAP
-#   (the value after id= in https://www.arcgis.com/home/item.html?id=...).
-# - Separate the id and the url with a comma (a space also works).
-# - Blank lines and lines beginning with "#" are ignored.
-# - The document should be embeddable in a frame; pages that block framing
-#   will still offer an "Open in a new tab" link in the Learn panel.
+# Deploy this file in the SAME folder as map-explorer-gis.html, served over
+# http(s) (e.g. https://trbaker.github.io/map/). The lookup does not work from
+# a local file:// page.
 #
-# Place this file in the SAME folder as map-explorer-gis.html when you deploy
-# (for example, next to the page at https://trbaker.github.io/map/).
+# Entries below are generated from the HTML files in:
+#   https://github.com/trbaker/map/tree/main/learn
+# Each lesson is published at:
+#   https://trbaker.github.io/map/learn/<itemId>.html
 #
+# Generated 2026-06-23 — 160 maps.
 # ----------------------------------------------------------------------------
-# EXAMPLES (replace with your real map ids and lesson URLs):
-#
-# 36443e9570294a1f883b5d2c5abfe6b5, https://trbaker.github.io/map/lessons/rivers.html
-# a1b2c3d4e5f60718293a4b5c6d7e8f90, https://docs.google.com/document/d/EXAMPLE/pub
-# 0f1e2d3c4b5a69788796a5b4c3d2e1f0, https://example.org/lessons/earthquakes.pdf
-
-# ----------------------------------------------------------------------------
-# ACTIVE LINKS
-# ----------------------------------------------------------------------------
+029cb24160194f9eaa5fac3f609f8fde, https://trbaker.github.io/map/learn/029cb24160194f9eaa5fac3f609f8fde.html
+0516fb1ba1ba4934b31b49f58e4e2032, https://trbaker.github.io/map/learn/0516fb1ba1ba4934b31b49f58e4e2032.html
+064cc16579ca4795ab37cab48e3e5f93, https://trbaker.github.io/map/learn/064cc16579ca4795ab37cab48e3e5f93.html
+0671d5a3c9644332bb69e2dfd4d43251, https://trbaker.github.io/map/learn/0671d5a3c9644332bb69e2dfd4d43251.html
+075254fbed374ed3b49814b252bf297e, https://trbaker.github.io/map/learn/075254fbed374ed3b49814b252bf297e.html
+0827429014d44b18bdd38510d7d3860d, https://trbaker.github.io/map/learn/0827429014d44b18bdd38510d7d3860d.html
+091004ccbbe691c709fb76cc2302e8e5, https://trbaker.github.io/map/learn/091004ccbbe691c709fb76cc2302e8e5.html
+09d9e798949c4c8db6770a6341854f33, https://trbaker.github.io/map/learn/09d9e798949c4c8db6770a6341854f33.html
+0a3d935beaf2487e8119b96eefe3e035, https://trbaker.github.io/map/learn/0a3d935beaf2487e8119b96eefe3e035.html
+0ab08a9e4579a4f840cecdef682639f7, https://trbaker.github.io/map/learn/0ab08a9e4579a4f840cecdef682639f7.html
+0b07caad2fc342b48d2cfdfed74d94cc, https://trbaker.github.io/map/learn/0b07caad2fc342b48d2cfdfed74d94cc.html
+0b851ea28ac3470e9f882678470c4f83, https://trbaker.github.io/map/learn/0b851ea28ac3470e9f882678470c4f83.html
+0bba9d9a732300ac5d65d25a818be122, https://trbaker.github.io/map/learn/0bba9d9a732300ac5d65d25a818be122.html
+0c5e5549f73d4bffaaff1e750ce5d38f, https://trbaker.github.io/map/learn/0c5e5549f73d4bffaaff1e750ce5d38f.html
+0ce87928403d4b338c71fd245dc0be65, https://trbaker.github.io/map/learn/0ce87928403d4b338c71fd245dc0be65.html
+0f0685fd69314656b2443aad7e05968d, https://trbaker.github.io/map/learn/0f0685fd69314656b2443aad7e05968d.html
+0fccc890adc74032acc60ff7a66005f7, https://trbaker.github.io/map/learn/0fccc890adc74032acc60ff7a66005f7.html
+0ff7a8fd6b625728ce9f5129ed49b462, https://trbaker.github.io/map/learn/0ff7a8fd6b625728ce9f5129ed49b462.html
+12d5f742b0fd4aefbcc0ce02c05f6ccd, https://trbaker.github.io/map/learn/12d5f742b0fd4aefbcc0ce02c05f6ccd.html
+16127f8086aa49e489aed1414914533e, https://trbaker.github.io/map/learn/16127f8086aa49e489aed1414914533e.html
+19d2e98392834d2bbd816c61e8094142, https://trbaker.github.io/map/learn/19d2e98392834d2bbd816c61e8094142.html
+1d47741c9fb6d423e05adb44ad7c14f0, https://trbaker.github.io/map/learn/1d47741c9fb6d423e05adb44ad7c14f0.html
+1df2f588859368ca6a95c61ef8cff321, https://trbaker.github.io/map/learn/1df2f588859368ca6a95c61ef8cff321.html
+1edc0276aa0b0321f38a80eb53f8c4e5, https://trbaker.github.io/map/learn/1edc0276aa0b0321f38a80eb53f8c4e5.html
+1fa58444810004445eec15763ce1075b, https://trbaker.github.io/map/learn/1fa58444810004445eec15763ce1075b.html
+2008733e277c4335a0393df9c2b6fbb6, https://trbaker.github.io/map/learn/2008733e277c4335a0393df9c2b6fbb6.html
+20ef1832d31e91f333585d8701ba228a, https://trbaker.github.io/map/learn/20ef1832d31e91f333585d8701ba228a.html
+283cbf3df4484f4c9a65b547d23ec28a, https://trbaker.github.io/map/learn/283cbf3df4484f4c9a65b547d23ec28a.html
+2aff17412c6b77bf46901b65ab517780, https://trbaker.github.io/map/learn/2aff17412c6b77bf46901b65ab517780.html
+2c35612cf001061d665cc6f1506c6d3a, https://trbaker.github.io/map/learn/2c35612cf001061d665cc6f1506c6d3a.html
+2ddced657a95421494dc1f95f63be9c1, https://trbaker.github.io/map/learn/2ddced657a95421494dc1f95f63be9c1.html
+2e5c0cb1142ad3ce2352567cd9603081, https://trbaker.github.io/map/learn/2e5c0cb1142ad3ce2352567cd9603081.html
+2e649306f08d3d7dbb94ee71a8f8e03d, https://trbaker.github.io/map/learn/2e649306f08d3d7dbb94ee71a8f8e03d.html
+2fad51ae2db347c49b37d64714b02d30, https://trbaker.github.io/map/learn/2fad51ae2db347c49b37d64714b02d30.html
+345f96fb2109321d36dbc789bcb37042, https://trbaker.github.io/map/learn/345f96fb2109321d36dbc789bcb37042.html
+3a96330624bd23fa5f9e602a909faaea, https://trbaker.github.io/map/learn/3a96330624bd23fa5f9e602a909faaea.html
+3b6c89c4ce57d4f5c9053f9b4e77edea, https://trbaker.github.io/map/learn/3b6c89c4ce57d4f5c9053f9b4e77edea.html
+3c6485902ed0fe994063f828f1d9e9c4, https://trbaker.github.io/map/learn/3c6485902ed0fe994063f828f1d9e9c4.html
+3d36609f75aa3e9bd2a7aae95584fa30, https://trbaker.github.io/map/learn/3d36609f75aa3e9bd2a7aae95584fa30.html
+3f6faee01d2b47c18694137091d3373b, https://trbaker.github.io/map/learn/3f6faee01d2b47c18694137091d3373b.html
+401b62809f9df08d13a8ed7075307f60, https://trbaker.github.io/map/learn/401b62809f9df08d13a8ed7075307f60.html
+412824676b7c456f855b4dfaae07f452, https://trbaker.github.io/map/learn/412824676b7c456f855b4dfaae07f452.html
+4654fbc80e73aca4ef52f632733b2145, https://trbaker.github.io/map/learn/4654fbc80e73aca4ef52f632733b2145.html
+4823eee6799a4a6e8e000bc685e50080, https://trbaker.github.io/map/learn/4823eee6799a4a6e8e000bc685e50080.html
 491d9c86abca41acb04034aa9f4b36a9, https://trbaker.github.io/map/learn/491d9c86abca41acb04034aa9f4b36a9.html
+49f0b18797cc466294081c03973ae584, https://trbaker.github.io/map/learn/49f0b18797cc466294081c03973ae584.html
+4bd7830f10293d73bc1589fa7874c4cd, https://trbaker.github.io/map/learn/4bd7830f10293d73bc1589fa7874c4cd.html
+4c2f050b556b09f648a04b8ddde4af12, https://trbaker.github.io/map/learn/4c2f050b556b09f648a04b8ddde4af12.html
+4d33de17be51d862a45f6b7ae8605015, https://trbaker.github.io/map/learn/4d33de17be51d862a45f6b7ae8605015.html
+4ef82ff1fba0b5b828d460a01f103153, https://trbaker.github.io/map/learn/4ef82ff1fba0b5b828d460a01f103153.html
+4fcc81c0c5369e92f273384fe0739d6c, https://trbaker.github.io/map/learn/4fcc81c0c5369e92f273384fe0739d6c.html
+51a15d5dd0054155bd2cd11001a3f1b3, https://trbaker.github.io/map/learn/51a15d5dd0054155bd2cd11001a3f1b3.html
+51ce94dfbe13c0b8972871981366d676, https://trbaker.github.io/map/learn/51ce94dfbe13c0b8972871981366d676.html
+53cc22253f41d1b22b868731143a79eb, https://trbaker.github.io/map/learn/53cc22253f41d1b22b868731143a79eb.html
+54b8eb24f3e3427a8634e79822db94ef, https://trbaker.github.io/map/learn/54b8eb24f3e3427a8634e79822db94ef.html
+5563cbaad157d59f0d3976d2222b174b, https://trbaker.github.io/map/learn/5563cbaad157d59f0d3976d2222b174b.html
+568e3c9fe8413cc9cb5ebd8b4cdb6de5, https://trbaker.github.io/map/learn/568e3c9fe8413cc9cb5ebd8b4cdb6de5.html
+5758808a92499dd0af158c362efd27de, https://trbaker.github.io/map/learn/5758808a92499dd0af158c362efd27de.html
+586d8b72f5b04d68ba6c32c943c904f7, https://trbaker.github.io/map/learn/586d8b72f5b04d68ba6c32c943c904f7.html
+5887271ec61f690e404a6a6a6b1469a0, https://trbaker.github.io/map/learn/5887271ec61f690e404a6a6a6b1469a0.html
+5dd5928c8b812133f311c3f9064edef1, https://trbaker.github.io/map/learn/5dd5928c8b812133f311c3f9064edef1.html
+5fa568ba43af4b999ff3e7b8e98d6045, https://trbaker.github.io/map/learn/5fa568ba43af4b999ff3e7b8e98d6045.html
+6337c1c86468d909fd3bf288e7e6abf9, https://trbaker.github.io/map/learn/6337c1c86468d909fd3bf288e7e6abf9.html
+6438084d160a14ab8d4cc9b4e65467fd, https://trbaker.github.io/map/learn/6438084d160a14ab8d4cc9b4e65467fd.html
+64f7c0db362561e61e17ea27cc6a8a3e, https://trbaker.github.io/map/learn/64f7c0db362561e61e17ea27cc6a8a3e.html
+68bb4ffab037408baaad808f20ed3eee, https://trbaker.github.io/map/learn/68bb4ffab037408baaad808f20ed3eee.html
+6983dcdf905ea21923ebd9d0f94c39ae, https://trbaker.github.io/map/learn/6983dcdf905ea21923ebd9d0f94c39ae.html
+6c534d5b2d5c47bcbe1798ce3968df67, https://trbaker.github.io/map/learn/6c534d5b2d5c47bcbe1798ce3968df67.html
+6f1626f478a4f1d5b758ebd4c38b9a60, https://trbaker.github.io/map/learn/6f1626f478a4f1d5b758ebd4c38b9a60.html
+70d42aa57df9d81e5f70ff1ab1950d29, https://trbaker.github.io/map/learn/70d42aa57df9d81e5f70ff1ab1950d29.html
+70d65d421ec8458c95ded127fb91510f, https://trbaker.github.io/map/learn/70d65d421ec8458c95ded127fb91510f.html
+72cc8da03e0535f6724f9bce460224c2, https://trbaker.github.io/map/learn/72cc8da03e0535f6724f9bce460224c2.html
+738c8f33fecd831cb3fb865cb2a97ea2, https://trbaker.github.io/map/learn/738c8f33fecd831cb3fb865cb2a97ea2.html
+773e3706200044be82e1a50db9c4ef60, https://trbaker.github.io/map/learn/773e3706200044be82e1a50db9c4ef60.html
+77b80346a68e4f9feeed514a6dae3387, https://trbaker.github.io/map/learn/77b80346a68e4f9feeed514a6dae3387.html
+7a06e8e2818941f99a3d40bb32e08118, https://trbaker.github.io/map/learn/7a06e8e2818941f99a3d40bb32e08118.html
+7f6d6f2363ee800cc46838846a5353b3, https://trbaker.github.io/map/learn/7f6d6f2363ee800cc46838846a5353b3.html
+7fbedfe7cfbfd0a3098fe6e09a8e989e, https://trbaker.github.io/map/learn/7fbedfe7cfbfd0a3098fe6e09a8e989e.html
+819f60a5a3344d958d24f505849abaaa, https://trbaker.github.io/map/learn/819f60a5a3344d958d24f505849abaaa.html
+844c6b0d1c0c24ea79971c1a9deed5d7, https://trbaker.github.io/map/learn/844c6b0d1c0c24ea79971c1a9deed5d7.html
+86b6cdb66fea47a0a413120a0b49ae95, https://trbaker.github.io/map/learn/86b6cdb66fea47a0a413120a0b49ae95.html
+875e0382b086f1ab08b92f7ec1212927, https://trbaker.github.io/map/learn/875e0382b086f1ab08b92f7ec1212927.html
+88647cb946d13bc91402dabbdbcac049, https://trbaker.github.io/map/learn/88647cb946d13bc91402dabbdbcac049.html
+88e565be3813fa590e4e600de1b33848, https://trbaker.github.io/map/learn/88e565be3813fa590e4e600de1b33848.html
+8ad350ece0da4ab58e512b998d01aa74, https://trbaker.github.io/map/learn/8ad350ece0da4ab58e512b998d01aa74.html
+8eb079295f714af382438133a8484dea, https://trbaker.github.io/map/learn/8eb079295f714af382438133a8484dea.html
+902c6540e49fd12ecc27e7fa4401ab60, https://trbaker.github.io/map/learn/902c6540e49fd12ecc27e7fa4401ab60.html
+930f9f68739f48bab91e500711c80dc4, https://trbaker.github.io/map/learn/930f9f68739f48bab91e500711c80dc4.html
+9367e7e9b0d24f9195903229d3a73db9, https://trbaker.github.io/map/learn/9367e7e9b0d24f9195903229d3a73db9.html
+939faaccc5fd4a4582a20d56c66a329d, https://trbaker.github.io/map/learn/939faaccc5fd4a4582a20d56c66a329d.html
+94f6bde3cf43cabf2b2e68e5a2ecbcc0, https://trbaker.github.io/map/learn/94f6bde3cf43cabf2b2e68e5a2ecbcc0.html
+95ec2a7f17f098ef3f6c8773076002ff, https://trbaker.github.io/map/learn/95ec2a7f17f098ef3f6c8773076002ff.html
+96bd116f785ebd63b54b9c5b33aaada3, https://trbaker.github.io/map/learn/96bd116f785ebd63b54b9c5b33aaada3.html
+981e893443a1442ab9a334105ba12873, https://trbaker.github.io/map/learn/981e893443a1442ab9a334105ba12873.html
+9a9aa67585ab46d7a56f6e79115cc912, https://trbaker.github.io/map/learn/9a9aa67585ab46d7a56f6e79115cc912.html
+9c3448ed625349944bef36bed55ae7d9, https://trbaker.github.io/map/learn/9c3448ed625349944bef36bed55ae7d9.html
+9c5b3a342efa98e3b1f424765147a7d6, https://trbaker.github.io/map/learn/9c5b3a342efa98e3b1f424765147a7d6.html
+9cd264556bc04e9ab24bbdd37e55166b, https://trbaker.github.io/map/learn/9cd264556bc04e9ab24bbdd37e55166b.html
+a0b69fefbda9631f35d78c8b9f8f0092, https://trbaker.github.io/map/learn/a0b69fefbda9631f35d78c8b9f8f0092.html
+a11986ab7e6f4b4181ad0cd9688a5b54, https://trbaker.github.io/map/learn/a11986ab7e6f4b4181ad0cd9688a5b54.html
+a1a9172d26184eaa8ab5ae3dcc6091f1, https://trbaker.github.io/map/learn/a1a9172d26184eaa8ab5ae3dcc6091f1.html
+a27eae4235fba1c37914cda9bad3cb69, https://trbaker.github.io/map/learn/a27eae4235fba1c37914cda9bad3cb69.html
+a46e72666abb2d6a3a334db4d380b390, https://trbaker.github.io/map/learn/a46e72666abb2d6a3a334db4d380b390.html
+a5f1010694e235dc7034701297f24674, https://trbaker.github.io/map/learn/a5f1010694e235dc7034701297f24674.html
+a6fa2f0ffe596d2c8b2a695e8749acf2, https://trbaker.github.io/map/learn/a6fa2f0ffe596d2c8b2a695e8749acf2.html
+aa8135223a0e401bb46e11881d6df489, https://trbaker.github.io/map/learn/aa8135223a0e401bb46e11881d6df489.html
+ab7a038b51244a6b8200bb99c0abd285, https://trbaker.github.io/map/learn/ab7a038b51244a6b8200bb99c0abd285.html
+af56a43470ead3801be57a3cd36b5e50, https://trbaker.github.io/map/learn/af56a43470ead3801be57a3cd36b5e50.html
+b091b02bc583694832c33009ffc9be79, https://trbaker.github.io/map/learn/b091b02bc583694832c33009ffc9be79.html
+b0aa37db780f4d71b323bb4a1c7c1163, https://trbaker.github.io/map/learn/b0aa37db780f4d71b323bb4a1c7c1163.html
+b182a63fae4546aba6855f80782c6616, https://trbaker.github.io/map/learn/b182a63fae4546aba6855f80782c6616.html
+b296947d717643e5805378a5c3f5e6eb, https://trbaker.github.io/map/learn/b296947d717643e5805378a5c3f5e6eb.html
+b2ab19b71cc64d68bcddb99f1dc36973, https://trbaker.github.io/map/learn/b2ab19b71cc64d68bcddb99f1dc36973.html
+b41e7bef3fdb9c4351f6df8ae68accb8, https://trbaker.github.io/map/learn/b41e7bef3fdb9c4351f6df8ae68accb8.html
+b5b41304a18049f28325674dcdaf5dd3, https://trbaker.github.io/map/learn/b5b41304a18049f28325674dcdaf5dd3.html
+b90c9b71aed44d2eeb3e82f864bd28fe, https://trbaker.github.io/map/learn/b90c9b71aed44d2eeb3e82f864bd28fe.html
+b936f1e919cfe0327b9aafff4d1422b5, https://trbaker.github.io/map/learn/b936f1e919cfe0327b9aafff4d1422b5.html
+bc137fdaecda4586760f394d3ecc6523, https://trbaker.github.io/map/learn/bc137fdaecda4586760f394d3ecc6523.html
+bc9b16553ff285e7677422fc7a546fbd, https://trbaker.github.io/map/learn/bc9b16553ff285e7677422fc7a546fbd.html
+bed2dcee27a974e8baec2fad11aab0a1, https://trbaker.github.io/map/learn/bed2dcee27a974e8baec2fad11aab0a1.html
+c175fc83fb204fb0a98607c4acd7bf79, https://trbaker.github.io/map/learn/c175fc83fb204fb0a98607c4acd7bf79.html
+c2f4f9ecde3f4c3990dc5668e049f80e, https://trbaker.github.io/map/learn/c2f4f9ecde3f4c3990dc5668e049f80e.html
+c44788920ce738612687e4f6037db990, https://trbaker.github.io/map/learn/c44788920ce738612687e4f6037db990.html
+c4573c92af87ed302f0cb54acae68df1, https://trbaker.github.io/map/learn/c4573c92af87ed302f0cb54acae68df1.html
+c516795dd9b9461f881af2692d509a4d, https://trbaker.github.io/map/learn/c516795dd9b9461f881af2692d509a4d.html
+c85164f07808ba11b749bd4cc5734fa9, https://trbaker.github.io/map/learn/c85164f07808ba11b749bd4cc5734fa9.html
+ca0f00805d437ed6a398c91c07d3132e, https://trbaker.github.io/map/learn/ca0f00805d437ed6a398c91c07d3132e.html
+ca439bf81ba7f2dd476c1deccd6caabe, https://trbaker.github.io/map/learn/ca439bf81ba7f2dd476c1deccd6caabe.html
+cab3534eceb2fddff60e5f5113284db1, https://trbaker.github.io/map/learn/cab3534eceb2fddff60e5f5113284db1.html
+cc731d27bc3a49229b1a6dce71334ece, https://trbaker.github.io/map/learn/cc731d27bc3a49229b1a6dce71334ece.html
+cdc2ed0afdd8497f97de24a243a318c2, https://trbaker.github.io/map/learn/cdc2ed0afdd8497f97de24a243a318c2.html
+cde3b6723c56a2668b9d6cfcaaa69dcd, https://trbaker.github.io/map/learn/cde3b6723c56a2668b9d6cfcaaa69dcd.html
+ce97ab4fbef7022e7efd968aedf407a9, https://trbaker.github.io/map/learn/ce97ab4fbef7022e7efd968aedf407a9.html
+ceb65dc8bf2abd520f6564d053d80da5, https://trbaker.github.io/map/learn/ceb65dc8bf2abd520f6564d053d80da5.html
+d1700a847062241951a7963755ccecf3, https://trbaker.github.io/map/learn/d1700a847062241951a7963755ccecf3.html
+d9d357cb2a0575dd4f2351d17de3cc1e, https://trbaker.github.io/map/learn/d9d357cb2a0575dd4f2351d17de3cc1e.html
+dc876339b880d28319a3b9d4f9a76418, https://trbaker.github.io/map/learn/dc876339b880d28319a3b9d4f9a76418.html
+dd2b9d10cd1e4b569107480c2629be77, https://trbaker.github.io/map/learn/dd2b9d10cd1e4b569107480c2629be77.html
+ddef07d8bacc9c2e10761fcdf914b3a7, https://trbaker.github.io/map/learn/ddef07d8bacc9c2e10761fcdf914b3a7.html
+dfc5427f5f095b8de0cb22e809a11bc7, https://trbaker.github.io/map/learn/dfc5427f5f095b8de0cb22e809a11bc7.html
+e0bc7263581f4bd5a8a416de167be7ff, https://trbaker.github.io/map/learn/e0bc7263581f4bd5a8a416de167be7ff.html
+e32e1a5133e48b0527ef965b29f652b1, https://trbaker.github.io/map/learn/e32e1a5133e48b0527ef965b29f652b1.html
+e3a4b52737536b25287a8a480c83c382, https://trbaker.github.io/map/learn/e3a4b52737536b25287a8a480c83c382.html
+e3d0392bf368f99ff11e624c1471310d, https://trbaker.github.io/map/learn/e3d0392bf368f99ff11e624c1471310d.html
+e47eee6ee92e1b7133b48938b0bd9e21, https://trbaker.github.io/map/learn/e47eee6ee92e1b7133b48938b0bd9e21.html
+e646186cce3117f592508e4cdc1e7238, https://trbaker.github.io/map/learn/e646186cce3117f592508e4cdc1e7238.html
+e673087c123b4b4bb2da17015680ef63, https://trbaker.github.io/map/learn/e673087c123b4b4bb2da17015680ef63.html
+eb4ff484c0cc45128a02fb8c8d29f2cb, https://trbaker.github.io/map/learn/eb4ff484c0cc45128a02fb8c8d29f2cb.html
+eb6d343b9f7a2c454b6f9dd21a827f5d, https://trbaker.github.io/map/learn/eb6d343b9f7a2c454b6f9dd21a827f5d.html
+eed052f97ac743dfb86a92ab8ccbdb6d, https://trbaker.github.io/map/learn/eed052f97ac743dfb86a92ab8ccbdb6d.html
+ef6200ea0a812c9d5035c72450e84a4b, https://trbaker.github.io/map/learn/ef6200ea0a812c9d5035c72450e84a4b.html
+efd29daed1b8bef3e909eb1e6abb3175, https://trbaker.github.io/map/learn/efd29daed1b8bef3e909eb1e6abb3175.html
+f1de050512c44bd698f20a216f763a8d, https://trbaker.github.io/map/learn/f1de050512c44bd698f20a216f763a8d.html
+f24bf55a7548c1ef512c7f40d00502bb, https://trbaker.github.io/map/learn/f24bf55a7548c1ef512c7f40d00502bb.html
+f5db73366e174fe6a0d352b47a1403f5, https://trbaker.github.io/map/learn/f5db73366e174fe6a0d352b47a1403f5.html
+f78e6c20e35c4d77a6060b67bba0f29e, https://trbaker.github.io/map/learn/f78e6c20e35c4d77a6060b67bba0f29e.html
+f8abac705068c09a16c9d193cf016db8, https://trbaker.github.io/map/learn/f8abac705068c09a16c9d193cf016db8.html
+fe01d4e4e8e42c0acf624fc08605a72f, https://trbaker.github.io/map/learn/fe01d4e4e8e42c0acf624fc08605a72f.html
+ff18c77b178f4c9e9241a0039c12a6ec, https://trbaker.github.io/map/learn/ff18c77b178f4c9e9241a0039c12a6ec.html
+ffc24aae4a9a82a72d247d591437608c, https://trbaker.github.io/map/learn/ffc24aae4a9a82a72d247d591437608c.html
