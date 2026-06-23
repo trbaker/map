@@ -1302,9 +1302,6 @@ require([
     }
     buildWidgets();
     window.__mxlog && window.__mxlog("Switched to "+(is3D?"3D":"2D")+" view");
-    const btn = $("btn3D");
-    btn.textContent = is3D ? "🗺️ 2D view" : "🧊 3D view";
-    btn.classList.toggle("mode-on", is3D);
     if(announce){
       toast(is3D
         ? "3D on — real terrain, buildings, and 3D basemaps. Drag with the right mouse button (or two fingers) to tilt."
