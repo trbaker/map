@@ -225,13 +225,10 @@
   .empty{font-size:var(--text-sm);color:var(--text-mute);font-style:italic;padding:8px 0}
 
   .widget-host{margin-top:8px}
-  /* extra sketch tools (text, freeform) styled to match the Sketch widget's tool buttons */
-  .sk-xbar{display:inline-flex;margin-top:8px;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;background:var(--white)}
-  .sk-xbtn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;
-    border:0;border-left:1px solid var(--border);background:var(--white);color:var(--ink-800);cursor:pointer;padding:0}
-  .sk-xbtn:first-child{border-left:0}
-  .sk-xbtn:hover{background:var(--ink-50);color:var(--ink-950)}
-  .sk-xbtn svg{width:18px;height:18px;display:block}
+  /* Freeform + Text tools are injected into the Sketch widget's own toolbar row;
+     these size their icons to match the SDK's tool-button icons. */
+  .sk-xicon{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+  .sk-xicon svg{width:16px;height:16px;display:block}
   .esri-basemap-gallery{background:transparent}
 
   /* basemap thumbnail grid */
@@ -506,10 +503,6 @@
 
           <label class="field-label">1. Draw points, lines, and shapes</label>
           <div id="sketchHost" class="widget-host"></div>
-          <div class="sk-xbar">
-            <button class="sk-xbtn" id="freeLineBtn" title="Freeform line" aria-label="Freeform line"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M2 11c1.6-4.5 3.6 4.5 5.2 0S11 6.5 12.5 11s2 .4 3.5-1.5"/></svg></button>
-            <button class="sk-xbtn" id="addTextBtn" title="Add text" aria-label="Add text"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h10M9 5v9"/></svg></button>
-          </div>
 
           <label class="field-label">2. Customize the point marker</label>
           <p class="hint" style="margin:0 0 8px">Pick a marker shape for the point tool — including digital map pins.</p>
@@ -1178,6 +1171,41 @@ require([
   }
   // freeform (freehand) line tool
   function armFreeformLine(){ if(sketch){ try{ sketch.create("polyline", { mode:"freehand" }); }catch(e){} } }
+
+  // Place the Freeform-line and Add-text tools INSIDE the Sketch widget's own
+  // toolbar row (next to point/line/polygon/rectangle/circle) so they match.
+  const SK_FREE_SVG = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11c1.6-4.5 3.6 4.5 5.2 0S11 6.5 12.5 11s2 .4 3.5-1.5"/></svg>';
+  const SK_TEXT_SVG = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h10M9 5v9"/></svg>';
+  function makeSketchExtraBtn(id, title, svg, handler, sampleBtn){
+    const b = document.createElement("button");
+    b.id = id; b.type = "button"; b.title = title; b.setAttribute("aria-label", title);
+    b.className = sampleBtn ? sampleBtn.className : "esri-sketch__button esri-widget--button";
+    b.innerHTML = '<span class="sk-xicon" aria-hidden="true">' + svg + '</span>';
+    b.addEventListener("click", handler);
+    return b;
+  }
+  function injectSketchExtras(){
+    const host = document.getElementById("sketchHost");
+    if(!host) return false;
+    const sampleBtn = host.querySelector(".esri-sketch__button");
+    if(!sampleBtn) return false;                 // toolbar hasn't rendered yet
+    const section = sampleBtn.parentElement;     // the create-tools row
+    if(!host.querySelector("#freeLineBtn")) section.appendChild(makeSketchExtraBtn("freeLineBtn","Freeform line",SK_FREE_SVG,armFreeformLine,sampleBtn));
+    if(!host.querySelector("#addTextBtn"))  section.appendChild(makeSketchExtraBtn("addTextBtn","Add text",SK_TEXT_SVG,armTextTool,sampleBtn));
+    return true;
+  }
+  let _sketchObs = null;
+  function ensureSketchExtras(tries){
+    if(!injectSketchExtras() && tries > 0) setTimeout(()=>ensureSketchExtras(tries-1), 60);
+    const host = document.getElementById("sketchHost");
+    if(host && !_sketchObs){                      // survive widget re-renders (e.g. 2D/3D toggle)
+      _sketchObs = new MutationObserver(()=>{
+        const h = document.getElementById("sketchHost");
+        if(h && h.querySelector(".esri-sketch__button") && !(h.querySelector("#freeLineBtn") && h.querySelector("#addTextBtn"))) injectSketchExtras();
+      });
+      _sketchObs.observe(host, { childList:true, subtree:true });
+    }
+  }
   function applySketchColor(hex, fromUser){
     currentSketchColor = hex;
     if(sketch){
@@ -1346,6 +1374,7 @@ require([
       selectedSketchGraphics = (e.state==="start" || e.state==="active") ? (e.graphics || []) : [];
     });
     sketch.on("create", (e)=>{ if(e.state==="complete") selectedSketchGraphics = []; });
+    ensureSketchExtras(25);   // add Freeform + Text into the Sketch toolbar row
     coordWidget = new CoordinateConversion({ view, container:"coordHost", mode:"capture" });
     coordWidget.when(()=>{
       // dropdown should offer only DD and DMS
@@ -1422,8 +1451,7 @@ require([
     b.addEventListener("click", ()=>applySketchColor(b.dataset.color, true));
   });
   $("customColor").addEventListener("input", (e)=>applySketchColor(e.target.value, true));
-  $("addTextBtn").addEventListener("click", armTextTool);
-  $("freeLineBtn").addEventListener("click", armFreeformLine);
+  
   renderMarkerStyles();   // populate the point-marker shape picker
   $("coordOut").addEventListener("click", ()=>{
     const txt = $("coordOut").textContent;
