@@ -225,10 +225,17 @@
   .empty{font-size:var(--text-sm);color:var(--text-mute);font-style:italic;padding:8px 0}
 
   .widget-host{margin-top:8px}
-  /* Freeform + Text tools are injected into the Sketch widget's own toolbar row;
-     these size their icons to match the SDK's tool-button icons. */
-  .sk-xicon{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
-  .sk-xicon svg{width:16px;height:16px;display:block}
+  /* The SDK Sketch widget stays alive (for select/move/reshape) but its built-in
+     toolbar is visually hidden; we drive it from our own coherent toolbar below. */
+  .sk-host{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);opacity:0;pointer-events:none}
+  .sk-tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
+  .sk-tool{width:34px;height:34px;display:flex;align-items:center;justify-content:center;
+    border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--white);
+    color:var(--ink-800);cursor:pointer;padding:0;transition:background .12s,border-color .12s,color .12s}
+  .sk-tool:hover{background:var(--ink-50);color:var(--ink-950);border-color:var(--ink-300)}
+  .sk-tool.active{background:var(--accent-soft);border-color:var(--accent);color:var(--ink-950)}
+  .sk-tool svg{width:18px;height:18px;display:block}
+  .sk-div{width:1px;height:22px;background:var(--border);margin:0 3px}
   .esri-basemap-gallery{background:transparent}
 
   /* basemap thumbnail grid */
@@ -502,7 +509,17 @@
           <p class="hint">Draw on the map, choose how your points look, then pick a color. To recolor something, select it and pick a new color.</p>
 
           <label class="field-label">1. Draw points, lines, and shapes</label>
-          <div id="sketchHost" class="widget-host"></div>
+          <div id="sketchTools" class="sk-tools" role="toolbar" aria-label="Drawing tools">
+            <button type="button" class="sk-tool" data-tool="point" title="Point" aria-label="Point"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="3.4" fill="currentColor" stroke="none"/></svg></button>
+            <button type="button" class="sk-tool" data-tool="polyline" title="Line" aria-label="Line"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,15 8,8 12,12 17,5"/><circle cx="3" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="17" cy="5" r="1.5" fill="currentColor" stroke="none"/></svg></button>
+            <button type="button" class="sk-tool" data-tool="polygon" title="Polygon" aria-label="Polygon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M10 3l6.5 5-2.5 8H6L3.5 8z"/></svg></button>
+            <button type="button" class="sk-tool" data-tool="rectangle" title="Rectangle" aria-label="Rectangle"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="5.5" width="12" height="9" rx="1"/></svg></button>
+            <button type="button" class="sk-tool" data-tool="circle" title="Circle" aria-label="Circle"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="6"/></svg></button>
+            <span class="sk-div" aria-hidden="true"></span>
+            <button type="button" class="sk-tool" data-tool="freehand" title="Freeform line" aria-label="Freeform line"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12c1.8-5 4-5 5.8 0S12.5 7 14.3 12s2.2.4 2.7-1.4"/></svg></button>
+            <button type="button" class="sk-tool" data-tool="text" title="Add text" aria-label="Add text"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 6h10M10 6v10"/></svg></button>
+          </div>
+          <div id="sketchHost" class="sk-host"></div>
 
           <label class="field-label">2. Customize the point marker</label>
           <p class="hint" style="margin:0 0 8px">Pick a marker shape for the point tool — including digital map pins.</p>
@@ -1152,60 +1169,50 @@ require([
   // text tool: type a label, then click the map to place it (in the current color)
   let textClickHandle = null;
   function armTextTool(){
-    if(!view) return;
+    if(!view){ clearActiveTool(); return; }
     const txt = prompt("Type your text label:");
-    if(txt == null) return;
-    const t = txt.trim(); if(!t) return;
+    if(txt == null){ clearActiveTool(); return; }
+    const t = txt.trim(); if(!t){ clearActiveTool(); return; }
     try{ if(sketch) sketch.cancel(); }catch(e){}
     if(textClickHandle){ try{ textClickHandle.remove(); }catch(e){} textClickHandle = null; }
     toast("Now click the map to place your text.");
     textClickHandle = view.on("click", (evt)=>{
-      if(currentPane !== "sketch"){ if(textClickHandle){ textClickHandle.remove(); textClickHandle = null; } return; } // abandoned: cancel arming
+      if(currentPane !== "sketch"){ if(textClickHandle){ textClickHandle.remove(); textClickHandle = null; } clearActiveTool(); return; } // abandoned: cancel arming
       if(evt.stopPropagation) evt.stopPropagation();
       const pt = evt.mapPoint;
       if(textClickHandle){ textClickHandle.remove(); textClickHandle = null; }
+      clearActiveTool();
       if(!pt) return;
       sketchLayer.add(new Graphic({ geometry:pt, symbol: textSymbol(currentSketchColor, t) }));
-      toast("Text added. Use the Sketch select tool to move it.");
+      toast("Text added. Click a drawing to select and move it.");
     });
   }
-  // freeform (freehand) line tool
-  function armFreeformLine(){ if(sketch){ try{ sketch.create("polyline", { mode:"freehand" }); }catch(e){} } }
 
-  // Place the Freeform-line and Add-text tools INSIDE the Sketch widget's own
-  // toolbar row (next to point/line/polygon/rectangle/circle) so they match.
-  const SK_FREE_SVG = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11c1.6-4.5 3.6 4.5 5.2 0S11 6.5 12.5 11s2 .4 3.5-1.5"/></svg>';
-  const SK_TEXT_SVG = '<svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h10M9 5v9"/></svg>';
-  function makeSketchExtraBtn(id, title, svg, handler, sampleBtn){
-    const b = document.createElement("button");
-    b.id = id; b.type = "button"; b.title = title; b.setAttribute("aria-label", title);
-    b.className = sampleBtn ? sampleBtn.className : "esri-sketch__button esri-widget--button";
-    b.innerHTML = '<span class="sk-xicon" aria-hidden="true">' + svg + '</span>';
-    b.addEventListener("click", handler);
-    return b;
+  // ---- custom drawing toolbar (drives the live Sketch widget; its native toolbar is hidden) ----
+  const SK_TOOL_MAP = {
+    point:["point", null], polyline:["polyline", null], polygon:["polygon", null],
+    rectangle:["rectangle", null], circle:["circle", null], freehand:["polyline", { mode:"freehand" }]
+  };
+  function setActiveTool(name){
+    document.querySelectorAll("#sketchTools .sk-tool").forEach(b=> b.classList.toggle("active", b.dataset.tool === name));
   }
-  function injectSketchExtras(){
-    const host = document.getElementById("sketchHost");
-    if(!host) return false;
-    const sampleBtn = host.querySelector(".esri-sketch__button");
-    if(!sampleBtn) return false;                 // toolbar hasn't rendered yet
-    const section = sampleBtn.parentElement;     // the create-tools row
-    if(!host.querySelector("#freeLineBtn")) section.appendChild(makeSketchExtraBtn("freeLineBtn","Freeform line",SK_FREE_SVG,armFreeformLine,sampleBtn));
-    if(!host.querySelector("#addTextBtn"))  section.appendChild(makeSketchExtraBtn("addTextBtn","Add text",SK_TEXT_SVG,armTextTool,sampleBtn));
-    return true;
+  function clearActiveTool(){ setActiveTool(null); }
+  function startSketchTool(tool){
+    if(tool === "text"){ setActiveTool("text"); armTextTool(); return; }
+    if(!sketch){ return; }
+    try{ sketch.cancel(); }catch(e){}
+    const spec = SK_TOOL_MAP[tool]; if(!spec) return;
+    setActiveTool(tool);
+    try{ spec[1] ? sketch.create(spec[0], spec[1]) : sketch.create(spec[0]); }catch(e){}
   }
-  let _sketchObs = null;
-  function ensureSketchExtras(tries){
-    if(!injectSketchExtras() && tries > 0) setTimeout(()=>ensureSketchExtras(tries-1), 60);
-    const host = document.getElementById("sketchHost");
-    if(host && !_sketchObs){                      // survive widget re-renders (e.g. 2D/3D toggle)
-      _sketchObs = new MutationObserver(()=>{
-        const h = document.getElementById("sketchHost");
-        if(h && h.querySelector(".esri-sketch__button") && !(h.querySelector("#freeLineBtn") && h.querySelector("#addTextBtn"))) injectSketchExtras();
-      });
-      _sketchObs.observe(host, { childList:true, subtree:true });
-    }
-  }
+  (function wireSketchToolbar(){
+    const bar = document.getElementById("sketchTools");
+    if(bar) bar.addEventListener("click", (e)=>{
+      const btn = e.target.closest(".sk-tool"); if(!btn) return;
+      startSketchTool(btn.dataset.tool);
+    });
+  })();
+
   function applySketchColor(hex, fromUser){
     currentSketchColor = hex;
     if(sketch){
@@ -1373,8 +1380,7 @@ require([
     sketch.on("update", (e)=>{
       selectedSketchGraphics = (e.state==="start" || e.state==="active") ? (e.graphics || []) : [];
     });
-    sketch.on("create", (e)=>{ if(e.state==="complete") selectedSketchGraphics = []; });
-    ensureSketchExtras(25);   // add Freeform + Text into the Sketch toolbar row
+    sketch.on("create", (e)=>{ if(e.state==="complete" || e.state==="cancel"){ selectedSketchGraphics = []; clearActiveTool(); } });
     coordWidget = new CoordinateConversion({ view, container:"coordHost", mode:"capture" });
     coordWidget.when(()=>{
       // dropdown should offer only DD and DMS
