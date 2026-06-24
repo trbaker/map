@@ -496,9 +496,9 @@
           <label class="field-label">2. Add a fast layer</label>
           <p class="hint" style="margin:0 0 9px">Tap a topic to drop a ready-made layer onto your map.</p>
           <div class="fast-row" id="fastLayers">
-            <button type="button" class="fast-link" data-fast="water">Water</button>
+            <button type="button" class="fast-link" data-fast="water">US Rivers</button>
             <button type="button" class="fast-link" data-fast="population">Population</button>
-            <button type="button" class="fast-link" data-fast="roads">Roads</button>
+            <button type="button" class="fast-link" data-fast="roads">US Roads</button>
             <button type="button" class="fast-link" data-fast="tectonic">Tectonic plates</button>
             <button type="button" class="fast-link" data-fast="volcanoes">Volcanoes</button>
           </div>
@@ -1530,7 +1530,8 @@ require([
   // Swap these ids/urls for your preferred education.maps.arcgis.com items anytime.
   const FAST_LAYERS = {
     water:      { title:"USA Rivers and Streams",   item:"0baca6c9ffd6499fb8e5fad50174c4e0" },
-    population: { title:"USA Population Density",    item:"9647e1c3791649cdbff698ef6fb8615c" },
+    population: { title:"World Demographics by Country",
+                  search:{ portal:"https://education.maps.arcgis.com", name:"Countries_World_Demog" } },
     roads:      { title:"USA Freeway System",        item:"91c6a5f6410b4991ab0db1d7c26daacb" },
     tectonic:   { title:"Earth's Tectonic Plates",   item:"f4d58de63326438493af19c9156ca3ec" },
     volcanoes:  { title:"Volcanoes of the World",    url:"https://services.arcgis.com/N4jtru9dctSQR53c/arcgis/rest/services/ArcadeVolcanot_WFL1/FeatureServer/0" }
@@ -1544,10 +1545,27 @@ require([
       openPane("layers");
     });
   }
+  // resolve a service by name from a portal's public search, then add it
+  function addFastLayerBySearch(spec, title){
+    const url = `${spec.portal}/sharing/rest/search?f=json&num=10&q=` + encodeURIComponent(spec.name);
+    return fetch(url).then(r=>r.json()).then(j=>{
+      const results = (j && j.results) || [];
+      const rx = new RegExp(spec.name, "i");
+      const pick = results.find(it=> it.url && rx.test(it.url))      // service whose REST url is this service
+                || results.find(it=> rx.test(it.title||""))          // or an item titled like it
+                || results.find(it=> it.url) || results[0];
+      if(!pick) throw new Error("not found");
+      return pick.url ? addFastLayerByUrl(pick.url, title || pick.title)
+                      : addByPortalItem(pick.id, title || pick.title);
+    });
+  }
   function addFastLayer(key){
     const def = FAST_LAYERS[key]; if(!def) return;
     toast(`Adding ${def.title}…`);
-    const p = def.item ? addByPortalItem(def.item, def.title) : addFastLayerByUrl(def.url, def.title);
+    const p = def.item   ? addByPortalItem(def.item, def.title)
+            : def.url    ? addFastLayerByUrl(def.url, def.title)
+            : def.search ? addFastLayerBySearch(def.search, def.title)
+            : null;
     if(p && p.catch) p.catch(()=>toast(`Couldn't add ${def.title} (it may require a sign-in).`));
   }
   (function wireFastLayers(){
