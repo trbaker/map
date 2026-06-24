@@ -1411,7 +1411,8 @@ require([
       selectedSketchGraphics = (e.state==="start" || e.state==="active") ? (e.graphics || []) : [];
     });
     sketch.on("create", (e)=>{ if(e.state==="complete" || e.state==="cancel"){ selectedSketchGraphics = []; clearActiveTool(); } });
-    coordWidget = new CoordinateConversion({ view, container:"coordHost", mode:"capture" });
+    coordWidget = new CoordinateConversion({ view, container:"coordHost", mode:"live" });
+    if(currentPane === "coords") coordWidget.mode = "capture";   // capture only while the Place tool is open
     coordWidget.when(()=>{
       // dropdown should offer only DD and DMS
       const dd  = coordWidget.formats.find(f=>f.name==="dd");
@@ -1510,6 +1511,8 @@ require([
     document.querySelectorAll(".pane").forEach(p=>p.classList.remove("active"));
     $("pane-"+name).classList.add("active");
     document.querySelectorAll(".tool[data-pane]").forEach(t=>t.classList.toggle("active", t.dataset.pane===name));
+    // the Place tool captures a clicked point; everywhere else, leave clicks to the default identify/popup
+    if(typeof coordWidget !== "undefined" && coordWidget) coordWidget.mode = (name==="coords") ? "capture" : "live";
     // first time the Open pane is shown, load the gallery automatically
     if(name==="open" && $("webmapResults") && !$("webmapResults").dataset.loaded){
       $("webmapResults").dataset.loaded = "1";
@@ -1520,6 +1523,7 @@ require([
     currentPane=null;
     $("panel").classList.remove("open");
     document.querySelectorAll(".tool[data-pane]").forEach(t=>t.classList.remove("active"));
+    if(typeof coordWidget !== "undefined" && coordWidget) coordWidget.mode = "live";   // stop capturing clicks
   }
   document.querySelectorAll(".tool[data-pane]").forEach(t=>t.addEventListener("click", ()=>openPane(t.dataset.pane)));
   $("panelClose").addEventListener("click", closePanel);
@@ -1555,8 +1559,10 @@ require([
                 || results.find(it=> rx.test(it.title||""))          // or an item titled like it
                 || results.find(it=> it.url) || results[0];
       if(!pick) throw new Error("not found");
-      return pick.url ? addFastLayerByUrl(pick.url, title || pick.title)
-                      : addByPortalItem(pick.id, title || pick.title);
+      // load by PORTAL ITEM so the item's default ArcGIS Online styling/symbology is applied;
+      // fall back to the service url only if there's no item id
+      return pick.id ? addByPortalItem(pick.id, title || pick.title)
+                     : addFastLayerByUrl(pick.url, title || pick.title);
     });
   }
   function addFastLayer(key){
