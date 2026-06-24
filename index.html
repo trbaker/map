@@ -1377,6 +1377,7 @@ require([
     }
   }
 
+  let currentPane = null;   // which left-rail pane is open (declared before buildWidgets/setView run at init)
   function buildWidgets(){
     // in-map controls
     search = new Search({ view, includeDefaultSources:false, sources:[osmSource], popupEnabled:true, autoNavigate:false });
@@ -1502,7 +1503,6 @@ require([
   /* ---------- tool rail / panel switching ---------- */
   const titles = { open:"Open a map", basemaps:"Basemap", add:"Add data", layers:"Layer list", measure:"Measure",
                    sketch:"Sketch", coords:"Place", help:"Help" };
-  let currentPane = null;
   function openPane(name){
     if(currentPane===name){ closePanel(); return; }
     currentPane = name;
