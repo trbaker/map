@@ -240,6 +240,12 @@
   .sk-tool svg{width:18px;height:18px;display:block}
   .sk-div{width:1px;height:22px;background:var(--border);margin:0 3px}
   .esri-basemap-gallery{background:transparent}
+  /* fast-layer quick links */
+  .fast-row{display:flex;flex-wrap:wrap;gap:7px 16px;align-items:center}
+  .fast-link{background:none;border:0;padding:2px 0;color:var(--accent);font-weight:600;cursor:pointer;
+    font-size:var(--text-sm);font-family:var(--font-body);border-bottom:1px solid transparent;line-height:1.2}
+  .fast-link:hover{border-bottom-color:var(--accent)}
+  .fast-link:disabled{opacity:.5;cursor:default}
 
   /* basemap thumbnail grid */
   .bm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:8px}
@@ -487,7 +493,17 @@
           <button class="btn" id="dataUploadBtn">📁 Choose a data file…</button>
           <input type="file" id="dataFileInput" accept=".csv,.tsv,.txt,.geojson,.gpx,.kml" style="display:none" />
 
-          <label class="field-label" for="layerQuery">2. Add data from ArcGIS Online</label>
+          <label class="field-label">2. Add a fast layer</label>
+          <p class="hint" style="margin:0 0 9px">Tap a topic to drop a ready-made layer onto your map.</p>
+          <div class="fast-row" id="fastLayers">
+            <button type="button" class="fast-link" data-fast="water">Water</button>
+            <button type="button" class="fast-link" data-fast="population">Population</button>
+            <button type="button" class="fast-link" data-fast="roads">Roads</button>
+            <button type="button" class="fast-link" data-fast="tectonic">Tectonic plates</button>
+            <button type="button" class="fast-link" data-fast="volcanoes">Volcanoes</button>
+          </div>
+
+          <label class="field-label" for="layerQuery">3. Add data from ArcGIS Online</label>
           <p class="hint" style="margin:0 0 9px">Search free public layers — try “rivers”, “earthquakes”, “national parks”, or “population”. ★ Featured layers show up first.</p>
           <div class="row">
             <input type="search" id="layerQuery" placeholder="e.g. earthquakes" />
@@ -1509,6 +1525,36 @@ require([
   $("panelClose").addEventListener("click", closePanel);
 
   /* ---------- add public layers ---------- */
+  // ---- "Add a fast layer": one-tap preset layers ----
+  // Each entry uses a public ArcGIS Online item id, or a public service `url`.
+  // Swap these ids/urls for your preferred education.maps.arcgis.com items anytime.
+  const FAST_LAYERS = {
+    water:      { title:"USA Rivers and Streams",   item:"0baca6c9ffd6499fb8e5fad50174c4e0" },
+    population: { title:"USA Population Density",    item:"9647e1c3791649cdbff698ef6fb8615c" },
+    roads:      { title:"USA Freeway System",        item:"91c6a5f6410b4991ab0db1d7c26daacb" },
+    tectonic:   { title:"Earth's Tectonic Plates",   item:"f4d58de63326438493af19c9156ca3ec" },
+    volcanoes:  { title:"Volcanoes of the World",    url:"https://services.arcgis.com/N4jtru9dctSQR53c/arcgis/rest/services/ArcadeVolcanot_WFL1/FeatureServer/0" }
+  };
+  function addFastLayerByUrl(url, title){
+    return Layer.fromArcGISServerUrl({ url }).then(layer=>{
+      layer.title = title;
+      map.add(layer); registerLayer(layer);
+      layer.when(()=>{ enforceLayerOrder(); renderLayerList(); if(layer.fullExtent) view.goTo(layer.fullExtent).catch(()=>{}); });
+      toast(`Added “${title}”`);
+      openPane("layers");
+    });
+  }
+  function addFastLayer(key){
+    const def = FAST_LAYERS[key]; if(!def) return;
+    toast(`Adding ${def.title}…`);
+    const p = def.item ? addByPortalItem(def.item, def.title) : addFastLayerByUrl(def.url, def.title);
+    if(p && p.catch) p.catch(()=>toast(`Couldn't add ${def.title} (it may require a sign-in).`));
+  }
+  (function wireFastLayers(){
+    const row = document.getElementById("fastLayers");
+    if(row) row.addEventListener("click", (e)=>{ const b = e.target.closest(".fast-link"); if(b) addFastLayer(b.dataset.fast); });
+  })();
+
   function addByPortalItem(id, title){
     return Layer.fromPortalItem({ portalItem:new PortalItem({ id }) }).then(layer=>{
       if(title) layer.title = title;                 // use the real item name in the layer list
