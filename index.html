@@ -219,11 +219,22 @@
   .ll-act.is-disabled,.ll-act:disabled{opacity:.4;cursor:not-allowed;color:var(--text-mute);background:var(--ink-50);border-color:var(--border)}
   .ll-act.is-disabled:hover,.ll-act:disabled:hover{background:var(--ink-50);color:var(--text-mute);border-color:var(--border)}
   .ll-act.danger:hover{background:#d9534f;color:#fff;border-color:#d9534f}
+  .ll-act.leg-open svg{transform:rotate(180deg)}   /* chevron points up when legend is open */
+  .ll-act .ll-icon{transition:transform .15s ease}
   .ll-icon{width:15px;height:15px;display:block}
   .ll-opacity{display:none;align-items:center;gap:10px;margin-top:9px}
   .ll-opacity.open{display:flex}
   .ll-opacity input[type=range]{flex:1;min-width:0;accent-color:var(--accent);cursor:pointer}
   .ll-opval{font-size:var(--text-xs);color:var(--text-mute);font-family:var(--font-mono);white-space:nowrap}
+  /* per-layer legend (symbology) */
+  .ll-legend{display:none;margin-top:9px;padding:8px 9px;background:var(--ink-50);border:1px solid var(--border);border-radius:var(--radius-sm)}
+  .ll-legend.open{display:block}
+  .ll-leg-row{display:flex;align-items:center;gap:8px;padding:2px 0}
+  .ll-leg-swatch{width:18px;min-width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center}
+  .ll-leg-swatch svg,.ll-leg-swatch img{max-width:18px;max-height:18px}
+  .ll-leg-img{display:block}
+  .ll-leg-label{font-size:var(--text-xs);color:var(--ink-800);line-height:1.25;word-break:break-word}
+  .ll-leg-empty{font-size:var(--text-xs);color:var(--text-mute);font-style:italic;margin:0}
   .ll-empty{font-size:var(--text-xs);color:var(--text-mute);font-style:italic}
   .empty{font-size:var(--text-sm);color:var(--text-mute);font-style:italic;padding:8px 0}
 
@@ -667,7 +678,7 @@ require([
   "esri/widgets/Home","esri/widgets/ScaleBar","esri/widgets/Locate",
   "esri/layers/GraphicsLayer","esri/layers/Layer","esri/layers/VectorTileLayer","esri/layers/WebTileLayer",
   "esri/portal/PortalItem","esri/geometry/Point","esri/geometry/Polyline","esri/geometry/Polygon","esri/geometry/Extent","esri/Graphic","esri/Viewpoint","esri/Camera",
-  "esri/geometry/support/jsonUtils","esri/symbols/support/jsonUtils","esri/config"
+  "esri/geometry/support/jsonUtils","esri/symbols/support/jsonUtils","esri/symbols/support/symbolUtils","esri/config"
 ], function(
   Map, MapView, SceneView, WebMap, Basemap,
   BasemapGallery, LocalBasemapsSource,
@@ -676,7 +687,7 @@ require([
   Home, ScaleBar, Locate,
   GraphicsLayer, Layer, VectorTileLayer, WebTileLayer,
   PortalItem, Point, Polyline, Polygon, Extent, Graphic, Viewpoint, Camera,
-  geomJsonUtils, symbolJsonUtils, esriConfig
+  geomJsonUtils, symbolJsonUtils, symbolUtils, esriConfig
 ){
   "use strict";
 
@@ -845,7 +856,8 @@ require([
     trash:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 4h11M6 4V2.5h4V4M4 4l.6 9a1 1 0 0 0 1 1h4.8a1 1 0 0 0 1-1L12 4"/></svg>',
     opacity:'<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor" stroke="none"/></svg>',
     info:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4" stroke-linecap="round"/><circle cx="8" cy="5" r="0.6" fill="currentColor" stroke="none"/></svg>',
-    table:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.2" y="2.8" width="11.6" height="10.4" rx="1.2"/><path d="M2.2 6.2h11.6M2.2 9.6h11.6M6.4 6.2v7M2.2 6.2v-3.4"/></svg>'
+    table:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.2" y="2.8" width="11.6" height="10.4" rx="1.2"/><path d="M2.2 6.2h11.6M2.2 9.6h11.6M6.4 6.2v7M2.2 6.2v-3.4"/></svg>',
+    legend: '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
   function llActBtn(svg, title, fn, danger){
     const b = document.createElement("button");
@@ -854,6 +866,98 @@ require([
     b.addEventListener("click", fn);
     return b;
   }
+  // ---- per-layer legend (symbology) ----
+  function legendSwatch(symbol){
+    const sw = document.createElement("span"); sw.className = "ll-leg-swatch";
+    try{ symbolUtils.renderPreviewHTML(symbol, { node:sw, size:16 }); }catch(e){}
+    return sw;
+  }
+  function legendRow(symbol, label){
+    const row = document.createElement("div"); row.className = "ll-leg-row";
+    row.appendChild(symbol ? legendSwatch(symbol) : document.createElement("span"));
+    const lab = document.createElement("span"); lab.className = "ll-leg-label"; lab.textContent = label || "";
+    row.appendChild(lab);
+    return row;
+  }
+  function rendererLegendRows(renderer, layer){
+    const rows = [];
+    if(!renderer) return rows;
+    const t = renderer.type;
+    if(t==="simple" && renderer.symbol){
+      rows.push(legendRow(renderer.symbol, renderer.label || layer.title || ""));
+    } else if(t==="unique-value"){
+      (renderer.uniqueValueInfos||[]).forEach(i=> rows.push(legendRow(i.symbol, i.label!=null?i.label:String(i.value))));
+      if(renderer.defaultSymbol && renderer.defaultLabel) rows.push(legendRow(renderer.defaultSymbol, renderer.defaultLabel));
+    } else if(t==="class-breaks"){
+      (renderer.classBreakInfos||[]).forEach(i=> rows.push(legendRow(i.symbol, i.label || (i.minValue+" – "+i.maxValue))));
+      if(renderer.defaultSymbol && renderer.defaultLabel) rows.push(legendRow(renderer.defaultSymbol, renderer.defaultLabel));
+    } else if(renderer.symbol){
+      rows.push(legendRow(renderer.symbol, renderer.label || layer.title || ""));
+    }
+    return rows;
+  }
+  function graphicsLegendRows(layer){
+    const rows = [], seen = {};
+    (layer.graphics ? layer.graphics.toArray() : []).forEach(g=>{
+      if(!g.symbol) return;
+      let key; try{ key = JSON.stringify(g.symbol.toJSON()); }catch(e){ key = Math.random()+""; }
+      if(seen[key]) return; seen[key] = 1;
+      const gt = g.geometry && g.geometry.type;
+      const label = gt==="point"||gt==="multipoint" ? "Point" : gt==="polyline" ? "Line" : gt==="polygon" ? "Area" : (g.symbol.type==="text" ? "Text" : "Symbol");
+      rows.push(legendRow(g.symbol, label));
+    });
+    return rows;
+  }
+  function buildLegend(layer, box){
+    box.innerHTML = `<p class="ll-leg-empty">Loading legend…</p>`;
+    // 1) graphics layers (drawings + uploaded data): show the distinct symbols in use
+    if(layer.type === "graphics"){
+      const rows = graphicsLegendRows(layer);
+      box.innerHTML = ""; 
+      if(!rows.length){ box.innerHTML = `<p class="ll-leg-empty">Nothing drawn yet.</p>`; return; }
+      rows.forEach(r=>box.appendChild(r));
+      return;
+    }
+    // 2) client-rendered layers (feature/geojson/csv): build from the layer's renderer
+    const tryRenderer = ()=>{
+      const rows = rendererLegendRows(layer.renderer, layer);
+      if(rows.length){ box.innerHTML = ""; rows.forEach(r=>box.appendChild(r)); return true; }
+      return false;
+    };
+    if(layer.renderer && tryRenderer()) return;
+    // 3) server-rendered layers (map image / tile / imagery): use the service legend endpoint
+    if(layer.url){
+      const base = layer.url.replace(/\/+$/,"");
+      fetch(`${base}/legend?f=json`).then(r=>r.json()).then(j=>{
+        box.innerHTML = "";
+        const groups = (j && j.layers) || [];
+        let any = false;
+        groups.forEach(g=>{
+          (g.legend||[]).forEach(it=>{
+            any = true;
+            const row = document.createElement("div"); row.className = "ll-leg-row";
+            const img = document.createElement("img"); img.className = "ll-leg-img";
+            img.src = `data:${it.contentType||"image/png"};base64,${it.imageData}`;
+            row.appendChild(img);
+            const lab = document.createElement("span"); lab.className = "ll-leg-label";
+            lab.textContent = it.label || g.layerName || "";
+            row.appendChild(lab);
+            box.appendChild(row);
+          });
+        });
+        if(!any) box.innerHTML = `<p class="ll-leg-empty">No legend available.</p>`;
+      }).catch(()=>{ box.innerHTML = `<p class="ll-leg-empty">No legend available.</p>`; });
+      return;
+    }
+    // 4) last resort: retry the renderer once it loads, else nothing to show
+    if(layer.load){
+      layer.load().then(()=>{ if(!tryRenderer()) box.innerHTML = `<p class="ll-leg-empty">No legend available.</p>`; })
+                   .catch(()=>{ box.innerHTML = `<p class="ll-leg-empty">No legend available.</p>`; });
+    } else {
+      box.innerHTML = `<p class="ll-leg-empty">No legend available.</p>`;
+    }
+  }
+
   function moveLayer(layer, dir){
     autoLayerOrder = false;   // user is taking control of order
     const arr = map.layers.toArray();
@@ -926,7 +1030,18 @@ require([
         }, true));
       }
 
-      body.appendChild(name); body.appendChild(acts); body.appendChild(opWrap);
+      // collapsible legend (symbology), closed by default; built the first time it's opened
+      const legendBox = document.createElement("div"); legendBox.className = "ll-legend";
+      const legendBtn = llActBtn(LL_ICON.legend, "Show legend", ()=>{
+        const opening = !legendBox.classList.contains("open");
+        legendBox.classList.toggle("open", opening);
+        legendBtn.classList.toggle("leg-open", opening);
+        legendBtn.title = opening ? "Hide legend" : "Show legend";
+        if(opening && legendBox.dataset.built !== "1"){ legendBox.dataset.built = "1"; buildLegend(layer, legendBox); }
+      });
+      acts.insertBefore(legendBtn, acts.firstChild);   // legend toggle first, so it's easy to find
+
+      body.appendChild(name); body.appendChild(acts); body.appendChild(opWrap); body.appendChild(legendBox);
       item.appendChild(vis); item.appendChild(body);
       box.appendChild(item);
     });
