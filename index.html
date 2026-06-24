@@ -1720,10 +1720,10 @@ require([
                       polygon:"esriGeometryPolygon", extent:"esriGeometryEnvelope",
                       multipoint:"esriGeometryMultipoint" };
 
-  function sketchFeatureCollection(){
-    // group editable drawings (incl. uploaded data) by geometry type
+  function featureCollectionFromGraphics(graphics, opts){
+    // group graphics by geometry type into web-map feature-collection sublayers
     const groups = {};
-    sketchLayer.graphics.forEach((g, idx)=>{
+    graphics.forEach((g, idx)=>{
       const t = g.geometry && g.geometry.type;
       const et = GEOM_TYPE[t]; if(!et) return;
       const grp = groups[et] || (groups[et] = { feats:[], keys:new Set() });
@@ -1741,17 +1741,37 @@ require([
         ? { name:"OBJECTID", type:"esriFieldTypeOID", alias:"OBJECTID" }
         : { name:k, type:"esriFieldTypeString", alias:k });
       return {
-        layerDefinition:{ name:"Drawings "+(i+1), geometryType:et, objectIdField:"OBJECTID", fields:fields },
+        layerDefinition:{ name:(opts.name||"Features")+" "+(i+1), geometryType:et, objectIdField:"OBJECTID", fields:fields },
         featureSet:{ geometryType:et, spatialReference:view.spatialReference.toJSON(), features:grp.feats }
       };
     });
     if(!subLayers.length) return null;
-    return {
-      id:"mapexplorer-drawings", title:"Sketch layer", layerType:"ArcGISFeatureLayer",
-      opacity:(sketchLayer.opacity==null?1:sketchLayer.opacity), visibility:(sketchLayer.visible!==false),
-      mapexplorerSketch:true,
+    return Object.assign({
+      id:opts.id, title:opts.title, layerType:"ArcGISFeatureLayer",
+      opacity:(opts.opacity==null?1:opts.opacity), visibility:(opts.visibility!==false),
       featureCollection:{ layers:subLayers }
-    };
+    }, opts.flags || {});
+  }
+  function sketchFeatureCollection(){
+    return featureCollectionFromGraphics(sketchLayer.graphics, {
+      id:"mapexplorer-drawings", title:"Sketch layer", name:"Drawings",
+      opacity:sketchLayer.opacity, visibility:sketchLayer.visible, flags:{ mapexplorerSketch:true }
+    });
+  }
+  // rebuild a feature-collection op's graphics (with attribute popups) into a target graphics layer
+  function rebuildGraphicsInto(op, targetLayer){
+    if(op.opacity!=null) targetLayer.opacity = op.opacity;
+    if(op.visibility!=null) targetLayer.visible = op.visibility;
+    ((op.featureCollection && op.featureCollection.layers) || []).forEach(sub=>{
+      ((sub.featureSet && sub.featureSet.features) || []).forEach(f=>{
+        try{
+          const geom = geomJsonUtils.fromJSON(f.geometry);
+          const sym  = f.symbol ? symbolJsonUtils.fromJSON(f.symbol) : null;
+          const attrs = f.attributes || {};
+          targetLayer.add(new Graphic({ geometry:geom, symbol:sym, attributes:attrs, popupTemplate:makePopup(attrs) }));
+        }catch(e){}
+      });
+    });
   }
 
   function layerTypeFor(t){
@@ -1819,7 +1839,19 @@ require([
     const safeJSON = (fn)=>{ try{ return fn(); }catch(e){ return null; } };
     const ops = [];
     // save operational layers in their on-screen DRAW order (bottom → top)
-    map.layers.forEach(l=>{ if(addedLayers.indexOf(l) > -1) ops.push(operationalLayerJSON(l)); });
+    map.layers.forEach(l=>{
+      if(addedLayers.indexOf(l) === -1) return;
+      if(l.__fileSketch){          // uploaded data layers persist as feature collections (with their attributes)
+        const fc = featureCollectionFromGraphics(l.graphics, {
+          id:l.__fcId || ("mapexplorer-file-"+Date.now().toString(36)), title:l.title, name:"Data",
+          opacity:l.opacity, visibility:l.visible,
+          flags:{ mapexplorerFileSketch:true, mapexplorerFileName:l.__fileName || "" }
+        });
+        if(fc) ops.push(fc);
+      } else {
+        ops.push(operationalLayerJSON(l));
+      }
+    });
     const sk = sketchFeatureCollection(); if(sk) ops.push(sk);
 
     let baseMapJSON;
@@ -1899,19 +1931,16 @@ require([
     ops.forEach((op, opIndex)=>{
       if(op.mapexplorerSketch || op.mapfusionSketch || op.mapmakerSketch ||
          (op.featureCollection && ["mapexplorer-drawings","mapfusion-drawings","mapmaker-drawings"].indexOf(op.id)>-1)){
-        // rebuild editable drawings (incl. uploaded data) with attributes + popups
-        if(op.opacity!=null) sketchLayer.opacity = op.opacity;          // restore transparency
-        if(op.visibility!=null) sketchLayer.visible = op.visibility;
-        (op.featureCollection.layers||[]).forEach(sub=>{
-          (sub.featureSet && sub.featureSet.features || []).forEach(f=>{
-            try{
-              const geom = geomJsonUtils.fromJSON(f.geometry);
-              const sym = f.symbol ? symbolJsonUtils.fromJSON(f.symbol) : null;
-              const attrs = f.attributes || {};
-              sketchLayer.add(new Graphic({ geometry:geom, symbol:sym, attributes:attrs, popupTemplate:makePopup(attrs) }));
-            }catch(e){}
-          });
-        });
+        // rebuild editable drawings with attributes + popups into the shared sketch layer
+        rebuildGraphicsInto(op, sketchLayer);
+        return;
+      }
+      if(op.mapexplorerFileSketch){
+        // rebuild an uploaded data file as its own named layer (with attribute popups)
+        const fl = new GraphicsLayer({ title: op.title || ("Sketch layer " + (op.mapexplorerFileName||"")) });
+        fl.__fileSketch = true; fl.__fileName = op.mapexplorerFileName || ""; fl.__fcId = op.id; fl.__ord = opIndex;
+        rebuildGraphicsInto(op, fl);
+        map.add(fl); registerLayer(fl);
         return;
       }
       // vector tile layers reference by styleUrl (or a vector tile service url)
@@ -2249,7 +2278,7 @@ require([
       const lat=parseFloat(r[latIdx]), lon=parseFloat(r[lonIdx]);
       if(isNaN(lat)||isNaN(lon)||Math.abs(lat)>90||Math.abs(lon)>180) return;
       const attrs={}; headers.forEach((h,idx)=>{ attrs[h||("col"+idx)] = (r[idx]!=null?r[idx]:""); });
-      const g=pointGraphic(lon,lat,attrs); sketchLayer.add(g); added.push(g);
+      const g=pointGraphic(lon,lat,attrs); added.push(g);
     });
     return added;
   }
@@ -2278,7 +2307,7 @@ require([
       const attrs = Object.assign({}, f.properties||{});
       geomFromGeoJSON(f.geometry).forEach(part=>{
         const g=new Graphic({ geometry:part.g, symbol:part.s, attributes:attrs, popupTemplate:makePopup(attrs) });
-        sketchLayer.add(g); added.push(g);
+        added.push(g);
       });
     });
     return added;
@@ -2292,14 +2321,14 @@ require([
     xml.querySelectorAll("wpt").forEach(w=>{
       const [lon,lat]=ll(w); if(isNaN(lat)) return;
       const nm=(w.querySelector("name")||{}).textContent;
-      const g=pointGraphic(lon,lat,{ name:nm||"Waypoint" }); sketchLayer.add(g); added.push(g);
+      const g=pointGraphic(lon,lat,{ name:nm||"Waypoint" }); added.push(g);
     });
     const seg=(pts)=>{
       const path=[]; pts.forEach(p=>{ const [lon,lat]=ll(p); if(!isNaN(lat)) path.push([lon,lat]); });
       if(path.length>1){
         const g=new Graphic({ geometry:new Polyline({ paths:[path], spatialReference:{wkid:4326} }),
                               symbol:SYM.line, attributes:{ name:"Track" }, popupTemplate:makePopup({name:"Track"}) });
-        sketchLayer.add(g); added.push(g);
+        added.push(g);
       }
     };
     xml.querySelectorAll("trkseg").forEach(s=>seg(Array.from(s.querySelectorAll("trkpt"))));
@@ -2322,9 +2351,9 @@ require([
       const pt=pm.querySelector("Point > coordinates");
       const ls=pm.querySelector("LineString > coordinates");
       const pg=pm.querySelector("Polygon coordinates");
-      if(pt){ const c=parseKmlCoords(pt.textContent)[0]; if(c){ const g=pointGraphic(c[0],c[1],attrs); sketchLayer.add(g); added.push(g);} }
-      else if(ls){ const c=parseKmlCoords(ls.textContent); if(c.length>1){ const g=new Graphic({ geometry:new Polyline({paths:[c],spatialReference:{wkid:4326}}), symbol:SYM.line, attributes:attrs, popupTemplate:makePopup(attrs) }); sketchLayer.add(g); added.push(g);} }
-      else if(pg){ const c=parseKmlCoords(pg.textContent); if(c.length>2){ const g=new Graphic({ geometry:new Polygon({rings:[c],spatialReference:{wkid:4326}}), symbol:SYM.poly, attributes:attrs, popupTemplate:makePopup(attrs) }); sketchLayer.add(g); added.push(g);} }
+      if(pt){ const c=parseKmlCoords(pt.textContent)[0]; if(c){ const g=pointGraphic(c[0],c[1],attrs); added.push(g);} }
+      else if(ls){ const c=parseKmlCoords(ls.textContent); if(c.length>1){ const g=new Graphic({ geometry:new Polyline({paths:[c],spatialReference:{wkid:4326}}), symbol:SYM.line, attributes:attrs, popupTemplate:makePopup(attrs) }); added.push(g);} }
+      else if(pg){ const c=parseKmlCoords(pg.textContent); if(c.length>2){ const g=new Graphic({ geometry:new Polygon({rings:[c],spatialReference:{wkid:4326}}), symbol:SYM.poly, attributes:attrs, popupTemplate:makePopup(attrs) }); added.push(g);} }
     });
     return added;
   }
@@ -2345,9 +2374,17 @@ require([
       else { toast("Unsupported file type."); return; }
     }catch(e){ toast(e.message && /latitude/i.test(e.message) ? e.message : "Couldn’t read that file."); return; }
     if(!added.length){ toast("No map points found in that file."); return; }
+    // each uploaded file becomes its own named layer (with attribute popups already attached)
+    const fileLayer = new GraphicsLayer({ title:`Sketch layer ${name}` });
+    fileLayer.__fileSketch = true;
+    fileLayer.__fileName = name;
+    fileLayer.__fcId = "mapexplorer-file-" + Date.now().toString(36);
+    added.forEach(g=>fileLayer.add(g));
+    map.add(fileLayer); registerLayer(fileLayer);
+    enforceLayerOrder(); renderLayerList();
     view.goTo(added).catch(()=>{});
-    toast(`Added ${added.length} feature${added.length>1?"s":""} to your drawings`);
-    openPane("sketch");
+    toast(`Added ${added.length} feature${added.length>1?"s":""} as “Sketch layer ${name}”`);
+    openPane("layers");
   }
 
   $("dataUploadBtn").addEventListener("click", ()=>$("dataFileInput").click());
