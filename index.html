@@ -210,7 +210,8 @@
   .ll-vis:hover{background:var(--ink-50)}
   .ll-vis.off{color:var(--ink-300)}
   .ll-body{flex:1;min-width:0}
-  .ll-name{font-size:var(--text-sm);font-weight:600;color:var(--ink-900);line-height:1.25;word-break:break-word}
+  .ll-name{font-size:var(--text-sm);font-weight:600;color:var(--ink-900);line-height:1.25;word-break:break-word;transition:color .15s ease}
+  .ll-name.ll-name-dim{color:var(--text-mute)}   /* layer not drawing at the current zoom (or hidden) */
   .ll-actions{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
   .ll-act{width:26px;height:26px;border:1px solid var(--border);background:var(--surface);
     border-radius:var(--radius-sm);cursor:pointer;color:var(--ink-600);display:flex;align-items:center;justify-content:center;padding:0;
@@ -508,7 +509,7 @@
           <label class="field-label">1. Add your own data</label>
           <p class="hint" style="margin:0 0 9px">A spreadsheet (CSV) with <b>latitude</b> and <b>longitude</b> columns, or a GeoJSON, GPX, or KML file. Your points and shapes are added to your drawings so you can style, edit, and save them.</p>
           <button class="btn" id="dataUploadBtn">📁 Choose a data file…</button>
-          <input type="file" id="dataFileInput" accept=".csv,.tsv,.txt,.geojson,.gpx,.kml" style="display:none" />
+          <input type="file" id="dataFileInput" style="display:none" />
 
           <label class="field-label">2. Add a fast layer</label>
           <p class="hint" style="margin:0 0 9px">Tap a topic to drop a ready-made layer onto your map.</p>
@@ -972,12 +973,32 @@ require([
     map.layers.reorder(layer, j);
     if(map.layers.includes(placeLayer)) map.layers.reorder(placeLayer, map.layers.length-1); // keep pin on top
   }
+  // true when the layer would draw at the current view scale (minScale/maxScale of 0 = no limit)
+  function layerDrawsAtScale(layer){
+    const s = view && view.scale;
+    if(s == null) return true;
+    const mn = layer.minScale || 0;   // hidden when zoomed OUT past this (larger scale number)
+    const mx = layer.maxScale || 0;   // hidden when zoomed IN past this (smaller scale number)
+    if(mn && s > mn) return false;
+    if(mx && s < mx) return false;
+    return true;
+  }
+  // gray out the name of any layer that isn't actually showing right now (out of scale range, or hidden)
+  let llRows = [];
+  function updateLayerNameStates(){
+    llRows.forEach(r=>{
+      const showing = (r.layer.visible !== false) && layerDrawsAtScale(r.layer);
+      r.nameEl.classList.toggle("ll-name-dim", !showing);
+    });
+  }
+
   function renderLayerList(){
     const box = $("layerListCustom"); if(!box) return;
     // the list mirrors the map's draw order (top of list = top of map); hide internal layers (e.g. the place pin)
     const layers = map.layers.toArray().filter(l=>l.listMode!=="hide").reverse();
     box.innerHTML = "";
     if(!layers.length){ box.innerHTML = `<p class="ll-empty">No layers yet. Add data, draw something, or pick a basemap.</p>`; return; }
+    llRows = [];
     layers.forEach(layer=>{
       const item = document.createElement("div"); item.className = "ll-item";
 
@@ -991,6 +1012,7 @@ require([
         vis.classList.toggle("off", !layer.visible);
         vis.title = layer.visible ? "Hide layer" : "Show layer";
         vis.innerHTML = layer.visible ? LL_ICON.eye : LL_ICON.eyeOff;
+        updateLayerNameStates();
       });
 
       const body = document.createElement("div"); body.className = "ll-body";
@@ -1054,7 +1076,9 @@ require([
       body.appendChild(legendToggle); body.appendChild(legendBox);
       item.appendChild(vis); item.appendChild(body);
       box.appendChild(item);
+      llRows.push({ layer:layer, nameEl:name });
     });
+    updateLayerNameStates();   // apply gray/black based on the current zoom and visibility
   }
   map.layers.on("change", renderLayerList);  // re-render when layers are added, removed, or reordered
   renderLayerList();
@@ -1563,7 +1587,7 @@ require([
       const pt = view.toMap({ x:evt.x, y:evt.y });
       if(pt && pt.latitude!=null) $("coordOut").textContent = `${fmt(pt.latitude)}, ${fmt(pt.longitude)}`;
     });
-    scaleHandle = view.watch("scale", (s)=>{ if(s) $("scaleOut").textContent = Math.round(s).toLocaleString(); });
+    scaleHandle = view.watch("scale", (s)=>{ if(s) $("scaleOut").textContent = Math.round(s).toLocaleString(); updateLayerNameStates(); });
   }
 
   /* ---------- 3D context: real ArcGIS 3D services (terrain + OSM buildings) ---------- */
