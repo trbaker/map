@@ -257,14 +257,6 @@
   .sk-tool.active{background:var(--accent-soft);border-color:var(--accent);color:var(--ink-950)}
   .sk-tool svg{width:18px;height:18px;display:block}
   .sk-div{width:1px;height:22px;background:var(--border);margin:0 3px}
-  .sk-editor{margin-top:10px;padding:11px;background:var(--ink-50);border:1px solid var(--border);border-radius:var(--radius-sm)}
-  .sk-input{width:100%;box-sizing:border-box;margin-bottom:8px;padding:8px 9px;border:1px solid var(--border);border-radius:var(--radius-sm);font-family:var(--font-body);font-size:var(--text-sm);color:var(--ink-900);background:var(--white)}
-  .sk-input:focus{outline:none;border-color:var(--accent)}
-  .sk-area{resize:vertical;min-height:64px;line-height:1.4}
-  .sk-editor-actions{display:flex;flex-wrap:wrap;gap:6px}
-  .sk-editor-actions .btn{flex:0 0 auto}
-  .sk-pop{font-size:var(--text-sm);line-height:1.5;color:var(--ink-900)}
-  .sk-pop a{color:var(--accent);text-decoration:underline;word-break:break-word}
   .esri-basemap-gallery{background:transparent}
   /* fast-layer quick links */
   .fast-row{display:flex;flex-wrap:wrap;gap:7px 16px;align-items:center}
@@ -557,12 +549,10 @@
 
         <!-- Sketch -->
         <div class="pane" id="pane-sketch">
-          <p class="hint">Draw on the map, then pick a color. Use the <b>Select</b> tool (arrow) to edit a drawing's shape or color, or to add a pop-up with text and links.</p>
+          <p class="hint">Draw on the map, choose how your points look, then pick a color. To recolor something, select it and pick a new color.</p>
 
           <label class="field-label">Draw points, lines, and shapes</label>
           <div id="sketchTools" class="sk-tools" role="toolbar" aria-label="Drawing tools">
-            <button type="button" class="sk-tool" data-tool="select" title="Select &amp; edit" aria-label="Select and edit"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"><path d="M4 3l11 6.4-4.7 1.5-1.9 4.6z"/></svg></button>
-            <span class="sk-div" aria-hidden="true"></span>
             <button type="button" class="sk-tool" data-tool="point" title="Point" aria-label="Point"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="10" cy="10" r="3.4" fill="currentColor" stroke="none"/></svg></button>
             <button type="button" class="sk-tool" data-tool="polyline" title="Line" aria-label="Line"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,15 8,8 12,12 17,5"/><circle cx="3" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="17" cy="5" r="1.5" fill="currentColor" stroke="none"/></svg></button>
             <button type="button" class="sk-tool" data-tool="polygon" title="Polygon" aria-label="Polygon"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"><path d="M10 3l6.5 5-2.5 8H6L3.5 8z"/></svg></button>
@@ -573,19 +563,6 @@
             <button type="button" class="sk-tool" data-tool="text" title="Add text" aria-label="Add text"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M5 6h10M10 6v10"/></svg></button>
           </div>
           <div id="sketchHost" class="sk-host"></div>
-
-          <div id="sketchEditor" class="sk-editor" style="display:none">
-            <label class="field-label">Edit the selected drawing</label>
-            <p class="hint" style="margin:0 0 8px">Drag the points on the map to reshape it. Add an optional pop-up, then recolor it with the swatches below.</p>
-            <input type="text" id="skPopTitle" class="sk-input" placeholder="Pop-up title (optional)" maxlength="120" />
-            <textarea id="skPopText" class="sk-input sk-area" rows="4" placeholder="Pop-up text (optional). Make a link with [name](https://example.com), or paste a web address."></textarea>
-            <div class="sk-editor-actions">
-              <button type="button" class="btn" id="skPopSave">Save pop-up</button>
-              <button type="button" class="btn ghost" id="skPopClear">Remove pop-up</button>
-              <button type="button" class="btn ghost" id="skDelete">Delete</button>
-              <button type="button" class="btn ghost" id="skDone">Done</button>
-            </div>
-          </div>
 
           <div id="markerSection" style="display:none">
             <label class="field-label">Customize the point marker</label>
@@ -625,7 +602,7 @@
 
         <!-- Help -->
         <div class="pane" id="pane-help">
-          <p class="help-credit">Map Explorer was designed by Tom Baker of the Esri Education Team. This tool is at: <a href="https://trbaker.github.io/map" target="_blank" rel="noopener">https://trbaker.github.io/map</a></p>
+          <p class="help-credit">The Map Explorer was designed by Tom Baker of the Esri Education Team. This tool is at: <a href="https://trbaker.github.io/map" target="_blank" rel="noopener">https://trbaker.github.io/map</a></p>
           <p class="hint">A quick tour of every tool. GIS stands for <b>Geographic Information System</b> — software for making and studying maps.</p>
           <div class="help-item"><span class="k">🗺️</span><span class="t"><b>Basemap</b> — change the background map (satellite, streets, topographic…).</span></div>
           <div class="help-item"><span class="k">➕</span><span class="t"><b>Add data</b> — find free public map layers and add them on top.</span></div>
@@ -1279,7 +1256,6 @@ require([
   let currentSketchColor = "#2D72D9";
   let currentPointStyle  = "circle";
   let selectedSketchGraphics = [];
-  let editMode = false;   // Select tool on = clicking a drawing edits it; off = clicking opens its pop-up
   function hexToRgb(hex){
     hex = String(hex).replace("#","");
     if(hex.length===3) hex = hex.split("").map(c=>c+c).join("");
@@ -1324,69 +1300,6 @@ require([
     const s = sketchSymbols(hex), t = g.geometry.type;
     g.symbol = (t==="polyline") ? s.line : s.poly;
   }
-
-  // ---- pop-ups for drawings (plain text + clickable links) ----
-  // Supports [label](https://url) and bare http(s):// URLs; all other text is shown literally.
-  function buildPopupNode(text){
-    const wrap = document.createElement("div"); wrap.className = "sk-pop";
-    (text||"").split(/\r?\n/).forEach((line, li)=>{
-      if(li>0) wrap.appendChild(document.createElement("br"));
-      const re = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s]+)/g;
-      let last = 0, m;
-      while((m = re.exec(line))){
-        if(m.index > last) wrap.appendChild(document.createTextNode(line.slice(last, m.index)));
-        const url = m[2] || m[3], label = m[1] || m[3];
-        const a = document.createElement("a");
-        a.href = url; a.textContent = label; a.target = "_blank"; a.rel = "noopener noreferrer";
-        wrap.appendChild(a);
-        last = re.lastIndex;
-      }
-      if(last < line.length) wrap.appendChild(document.createTextNode(line.slice(last)));
-    });
-    return wrap;
-  }
-  function sketchPopupTemplate(){
-    return {
-      outFields:["*"],
-      title:(f)=>{ const a=(f.graphic&&f.graphic.attributes)||{}; return (a.title && String(a.title).trim()) || "Drawing"; },
-      content:(f)=>{ const a=(f.graphic&&f.graphic.attributes)||{}; return buildPopupNode(a.description||""); }
-    };
-  }
-  function graphicHasPopup(g){
-    const a = g && g.attributes; if(!a) return false;
-    return !!((a.title && String(a.title).trim()) || (a.description && String(a.description).trim()));
-  }
-  function openSketchPopup(g){
-    if(!g || !g.popupTemplate || !view) return;
-    let loc = null; const gm = g.geometry;
-    if(gm){ loc = (gm.type==="point") ? gm : (gm.centroid || (gm.extent && gm.extent.center) || null); }
-    try{ view.openPopup({ features:[g], location:loc }); }catch(e){}
-  }
-  // ---- selection / edit panel ----
-  function showSketchEditor(g){
-    const ed = $("sketchEditor"); if(!ed) return;
-    if(!g){ ed.style.display = "none"; return; }
-    const a = g.attributes || (g.attributes = {});
-    const tt = $("skPopTitle"), tx = $("skPopText");
-    if(tt) tt.value = a.title || "";
-    if(tx) tx.value = a.description || "";
-    ed.style.display = "";
-    // a selected point marker can also restyle its glyph
-    const isPointMarker = g.geometry && (g.geometry.type==="point"||g.geometry.type==="multipoint") && g.symbol && g.symbol.type!=="text";
-    const ms = $("markerSection"); if(ms) ms.style.display = isPointMarker ? "" : "none";
-  }
-  function hideSketchEditor(){
-    const ed = $("sketchEditor"); if(ed) ed.style.display = "none";
-    const ms = $("markerSection");
-    if(ms && !document.querySelector('#sketchTools .sk-tool[data-tool="point"].active')) ms.style.display = "none";
-  }
-  function setEditMode(on){
-    editMode = on;
-    if(on){ setActiveTool("select"); }
-    else { clearActiveTool(); hideSketchEditor(); selectedSketchGraphics = []; }
-    try{ if(sketch) sketch.cancel(); }catch(e){}
-  }
-
   // marker-shape choices for the point tool (incl. digital map pins)
   const POINT_STYLES = [
     {id:"circle",label:"Circle"},{id:"square",label:"Square"},{id:"diamond",label:"Diamond"},
@@ -1464,15 +1377,8 @@ require([
   }
   function clearActiveTool(){ setActiveTool(null); }
   function startSketchTool(tool){
-    if(tool === "select"){
-      const turningOn = !editMode;
-      setEditMode(turningOn);
-      toast(turningOn ? "Click a drawing to edit its shape, color, or pop-up." : "Done editing. Click a drawing to see its pop-up.");
-      return;
-    }
-    if(tool === "text"){ editMode = false; setActiveTool("text"); armTextTool(); return; }
+    if(tool === "text"){ setActiveTool("text"); armTextTool(); return; }
     if(!sketch){ return; }
-    editMode = false;
     try{ sketch.cancel(); }catch(e){}
     const spec = SK_TOOL_MAP[tool]; if(!spec) return;
     setActiveTool(tool);
@@ -1484,34 +1390,6 @@ require([
       const btn = e.target.closest(".sk-tool"); if(!btn) return;
       startSketchTool(btn.dataset.tool);
     });
-  })();
-  (function wireSketchEditor(){
-    const sel = ()=> selectedSketchGraphics && selectedSketchGraphics[0];
-    const save = $("skPopSave"), clr = $("skPopClear"), del = $("skDelete"), done = $("skDone");
-    if(save) save.addEventListener("click", ()=>{
-      const g = sel(); if(!g){ toast("Select a drawing first."); return; }
-      const a = g.attributes || (g.attributes = {});
-      a.title = ($("skPopTitle").value || "").trim();
-      a.description = ($("skPopText").value || "").trim();
-      g.popupTemplate = graphicHasPopup(g) ? sketchPopupTemplate() : null;
-      toast(graphicHasPopup(g) ? "Pop-up saved." : "Pop-up cleared.");
-    });
-    if(clr) clr.addEventListener("click", ()=>{
-      const g = sel(); if(!g) return;
-      const a = g.attributes || (g.attributes = {}); a.title = ""; a.description = "";
-      g.popupTemplate = null;
-      const tt = $("skPopTitle"), tx = $("skPopText"); if(tt) tt.value = ""; if(tx) tx.value = "";
-      toast("Pop-up removed.");
-    });
-    if(del) del.addEventListener("click", ()=>{
-      const g = sel(); if(!g) return;
-      try{ if(sketch) sketch.cancel(); }catch(e){}
-      sketchLayer.remove(g);
-      selectedSketchGraphics = [];
-      hideSketchEditor();
-      toast("Drawing deleted.");
-    });
-    if(done) done.addEventListener("click", ()=> setEditMode(false));
   })();
 
   function applySketchColor(hex, fromUser){
@@ -1680,31 +1558,9 @@ require([
       creationMode:"update", visibleElements:{ settingsMenu:false } });
     applySketchColor(currentSketchColor, false); // new drawings use the chosen color
     sketch.on("update", (e)=>{
-      if(e.state === "start" || e.state === "active"){
-        selectedSketchGraphics = e.graphics || [];
-        if(e.state === "start"){
-          const g = selectedSketchGraphics[0];
-          if(editMode){ showSketchEditor(g); }
-          else {
-            // view mode: don't edit — drop the selection and show the pop-up instead
-            selectedSketchGraphics = [];
-            setTimeout(()=>{ try{ sketch.cancel(); }catch(_){} openSketchPopup(g); }, 0);
-          }
-        }
-      } else { // complete or cancel
-        selectedSketchGraphics = [];
-        if(editMode) hideSketchEditor();
-      }
+      selectedSketchGraphics = (e.state==="start" || e.state==="active") ? (e.graphics || []) : [];
     });
-    sketch.on("create", (e)=>{
-      if(e.state === "complete"){
-        // newly drawn item: switch to edit so a pop-up can be added right away
-        editMode = true; setActiveTool("select");
-        showSketchEditor(e.graphic);
-      } else if(e.state === "cancel"){
-        clearActiveTool();
-      }
-    });
+    sketch.on("create", (e)=>{ if(e.state==="complete" || e.state==="cancel"){ selectedSketchGraphics = []; clearActiveTool(); } });
     coordWidget = new CoordinateConversion({ view, container:"coordHost", mode:"live" });
     if(currentPane === "coords") coordWidget.mode = "capture";   // capture only while the Place tool is open
     coordWidget.when(()=>{
@@ -2061,17 +1917,13 @@ require([
   function rebuildGraphicsInto(op, targetLayer){
     if(op.opacity!=null) targetLayer.opacity = op.opacity;
     if(op.visibility!=null) targetLayer.visible = op.visibility;
-    const isSketch = (targetLayer === sketchLayer);
     ((op.featureCollection && op.featureCollection.layers) || []).forEach(sub=>{
       ((sub.featureSet && sub.featureSet.features) || []).forEach(f=>{
         try{
           const geom = geomJsonUtils.fromJSON(f.geometry);
           const sym  = f.symbol ? symbolJsonUtils.fromJSON(f.symbol) : null;
           const attrs = f.attributes || {};
-          const g = new Graphic({ geometry:geom, symbol:sym, attributes:attrs });
-          if(isSketch){ if(graphicHasPopup(g)) g.popupTemplate = sketchPopupTemplate(); }
-          else { g.popupTemplate = makePopup(attrs); }
-          targetLayer.add(g);
+          targetLayer.add(new Graphic({ geometry:geom, symbol:sym, attributes:attrs, popupTemplate:makePopup(attrs) }));
         }catch(e){}
       });
     });
