@@ -1045,6 +1045,7 @@ require([
     if(map.layers.includes(placeLayer)) map.layers.reorder(placeLayer, map.layers.length-1); // keep pin on top
   }
   // true when the layer would draw at the current view scale (minScale/maxScale of 0 = no limit)
+  let view = null, is3D = false, buildingsLayer = null;   // declared early: layer-name dimming reads `view` during the first renderLayerList()
   function layerDrawsAtScale(layer){
     const s = view && view.scale;
     if(s == null) return true;
@@ -1359,7 +1360,6 @@ require([
 
 
   /* ---------- view + widgets (rebuilt when switching 2D <-> 3D) ---------- */
-  let view = null, is3D = false, buildingsLayer = null;
   let search, measurement, sketch, coordWidget;
   let homeW, locateW, scaleBar, pointerHandle, scaleHandle, extentHandle, placeClickHandle;
 
