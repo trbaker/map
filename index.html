@@ -302,18 +302,6 @@
   .custom-color{display:flex;align-items:center;gap:9px;margin-top:10px;font-size:var(--text-xs);color:var(--text-soft)}
   .custom-color input[type=color]{width:44px;height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);
     background:var(--surface);cursor:pointer;padding:2px}
-  /* point-style modal */
-  .psm-row{display:flex;align-items:center;gap:10px;margin:2px 0 8px}
-  .psm-row input[type=range]{flex:1;min-width:0;accent-color:var(--accent);cursor:pointer}
-  .psm-val{font-size:var(--text-xs);color:var(--text-mute);font-family:var(--font-mono);white-space:nowrap}
-  .psm-check{display:flex;align-items:center;gap:7px;font-size:var(--text-sm);color:var(--ink-800);margin:2px 0 8px;cursor:pointer}
-  .psm-check input{accent-color:var(--accent);width:15px;height:15px}
-  .psm-hint{font-size:var(--text-xs);color:var(--text-mute);font-style:italic;margin:0 0 8px}
-  select.sk-input{width:100%;margin:0 0 8px;padding:7px 8px;border:1px solid var(--border);border-radius:var(--radius-sm);
-    background:var(--surface);color:var(--ink-900);font-family:var(--font-body);font-size:var(--text-sm)}
-  .ramp-row{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 8px}
-  .ramp-btn{height:22px;width:88px;border:0;border-radius:var(--radius-sm);box-shadow:0 0 0 1px var(--border);cursor:pointer;padding:0}
-  .ramp-btn.active{box-shadow:0 0 0 2px var(--accent)}
 
   /* place info card */
   .place-info{margin-top:14px;border:1px solid var(--border);border-radius:var(--radius-lg);
@@ -471,7 +459,7 @@
 <body>
 <div id="app">
   <header>
-    <div class="brand"><span id="brandHome" class="brand-home" role="button" tabindex="0" title="Reload Map Explorer" aria-label="Reload Map Explorer"><svg class="brand-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/></svg><b>Map Explorer</b><span class="brand-ver">.94</span></span><span id="mapTitleLabel" class="map-title"></span></div>
+    <div class="brand"><span id="brandHome" class="brand-home" role="button" tabindex="0" title="Reload Map Explorer" aria-label="Reload Map Explorer"><svg class="brand-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 12l9 5 9-5"/><path d="M3 16l9 5 9-5"/></svg><b>Map Explorer</b><span class="brand-ver">.93</span></span><span id="mapTitleLabel" class="map-title"></span></div>
     <div class="spacer"></div>
     <button id="btnLearn" title="Open the lesson worksheet for this map">📖 Learn</button>
     <button id="btnDebug" class="temp-btn" title="Troubleshooting info (temporary)" style="display:none">🐞 Debug</button>
@@ -696,38 +684,6 @@
   </div>
 </div>
 
-<!-- ===== Style your points (uploaded point data) ===== -->
-<div class="modal-bg" id="pointStyleModal">
-  <div class="modal wide">
-    <h3>Style your points</h3>
-    <p id="psmSub">Pick a marker and color. You can also make the points bigger or change their color based on a number in your data.</p>
-
-    <label class="field-label">Marker</label>
-    <div class="marker-row" id="psmMarkers"></div>
-
-    <label class="field-label">Color</label>
-    <div class="swatch-row" id="psmSwatches"></div>
-    <div class="custom-color"><label for="psmCustom">Custom color</label><input type="color" id="psmCustom" value="#2D72D9" /></div>
-
-    <label class="field-label" style="margin-top:12px">Size</label>
-    <div class="psm-row"><input type="range" id="psmSize" min="6" max="40" value="12" /><span class="psm-val" id="psmSizeVal">12 px</span></div>
-    <label class="psm-check"><input type="checkbox" id="psmSizeBy" /> Size the points by a number field</label>
-    <p class="psm-hint" id="psmSizeNote" style="display:none">The slider sets the size of the largest points.</p>
-    <select id="psmSizeField" class="sk-input" style="display:none"></select>
-
-    <label class="field-label" style="margin-top:12px">Color by data</label>
-    <label class="psm-check"><input type="checkbox" id="psmColorBy" /> Color the points by a number field</label>
-    <select id="psmColorField" class="sk-input" style="display:none"></select>
-    <div class="ramp-row" id="psmRamps" style="display:none"></div>
-    <p class="psm-hint" id="psmNoNums" style="display:none">No number fields were found in this data, so size‑by and color‑by aren't available.</p>
-
-    <div class="btn-row">
-      <button class="btn marker" id="psmDone">Done</button>
-      <button class="btn ghost" id="psmReset">Reset</button>
-    </div>
-  </div>
-</div>
-
 <!-- ===== TEMPORARY debug modal — delete with the Debug button to remove ===== -->
 <div class="modal-bg" id="debugModal">
   <div class="modal wide">
@@ -931,8 +887,7 @@ require([
     opacity:'<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><circle cx="8" cy="8" r="6"/><path d="M8 2a6 6 0 0 0 0 12z" fill="currentColor" stroke="none"/></svg>',
     info:   '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.4v3.4" stroke-linecap="round"/><circle cx="8" cy="5" r="0.6" fill="currentColor" stroke="none"/></svg>',
     table:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="2.2" y="2.8" width="11.6" height="10.4" rx="1.2"/><path d="M2.2 6.2h11.6M2.2 9.6h11.6M6.4 6.2v7M2.2 6.2v-3.4"/></svg>',
-    legend: '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    style:  '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M8 1.8c-3.4 0-6.2 2.6-6.2 5.9 0 2.3 1.9 3.4 3.4 3.4.9 0 1.4.6 1.4 1.3 0 .9.7 1.6 1.6 1.6 3.3 0 6-2.7 6-6.1 0-3.3-2.8-6-6.2-6Z"/><circle cx="5.3" cy="6.4" r=".8" fill="currentColor" stroke="none"/><circle cx="8" cy="4.9" r=".8" fill="currentColor" stroke="none"/><circle cx="10.7" cy="6.4" r=".8" fill="currentColor" stroke="none"/></svg>'
+    legend: '<svg class="ll-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 6l4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>'
   };
   function llActBtn(svg, title, fn, danger){
     const b = document.createElement("button");
@@ -972,9 +927,6 @@ require([
     return rows;
   }
   function graphicsLegendRows(layer){
-    if(layer.__legendRows && layer.__legendRows.length){      // styled point layer: show its real classes/sizes
-      return layer.__legendRows.map(r=> legendRow(r.symbol, r.label));
-    }
     const rows = [], seen = {};
     (layer.graphics ? layer.graphics.toArray() : []).forEach(g=>{
       if(!g.symbol) return;
@@ -1054,49 +1006,11 @@ require([
     if(mx && s < mx) return false;
     return true;
   }
-  // ---- geographic (lon/lat) extent comparison, so it works on web-mercator and geographic basemaps ----
-  function xyToGeo(x, y, sr){
-    if(x == null || y == null) return null;
-    if(sr && (sr.wkid===4326 || sr.isGeographic)) return { lon:x, lat:y };
-    try{ const p = new Point({ x:x, y:y, spatialReference:sr });
-         if(p.longitude != null) return { lon:p.longitude, lat:p.latitude }; }catch(e){}
-    return { lon:x, lat:y };   // best-effort fallback for other projections
-  }
-  function toGeoExtent(ext){
-    if(!ext) return null;
-    const a = xyToGeo(ext.xmin, ext.ymin, ext.spatialReference);
-    const b = xyToGeo(ext.xmax, ext.ymax, ext.spatialReference);
-    if(!a || !b) return null;
-    return { xmin:Math.min(a.lon,b.lon), ymin:Math.min(a.lat,b.lat), xmax:Math.max(a.lon,b.lon), ymax:Math.max(a.lat,b.lat) };
-  }
-  function graphicsGeoExtent(layer){
-    let xmin=Infinity, ymin=Infinity, xmax=-Infinity, ymax=-Infinity, found=false;
-    (layer.graphics ? layer.graphics.toArray() : []).forEach(g=>{
-      const gm = g.geometry; if(!gm) return;
-      let e = null;
-      if(gm.type==="point"){ if(gm.longitude!=null) e = { xmin:gm.longitude, ymin:gm.latitude, xmax:gm.longitude, ymax:gm.latitude }; }
-      else if(gm.extent){ e = toGeoExtent(gm.extent); }
-      if(e){ found=true; xmin=Math.min(xmin,e.xmin); ymin=Math.min(ymin,e.ymin); xmax=Math.max(xmax,e.xmax); ymax=Math.max(ymax,e.ymax); }
-    });
-    return found ? { xmin, ymin, xmax, ymax } : null;
-  }
-  function bboxOverlap(a, b){
-    if(!a || !b) return true;   // unknown extent → don't dim
-    return a.xmin <= b.xmax && a.xmax >= b.xmin && a.ymin <= b.ymax && a.ymax >= b.ymin;
-  }
-  // true when any of the layer's footprint overlaps the current view extent
-  function layerInView(layer){
-    if(!view || !view.extent) return true;
-    const le = layer.fullExtent ? toGeoExtent(layer.fullExtent)
-             : (layer.type==="graphics" ? graphicsGeoExtent(layer) : null);
-    if(!le) return true;        // unknown footprint → don't dim
-    return bboxOverlap(le, toGeoExtent(view.extent));
-  }
-  // gray out the name of any layer that isn't actually showing right now (hidden, out of scale range, or off-screen)
+  // gray out the name of any layer that isn't actually showing right now (out of scale range, or hidden)
   let llRows = [];
   function updateLayerNameStates(){
     llRows.forEach(r=>{
-      const showing = (r.layer.visible !== false) && layerDrawsAtScale(r.layer) && layerInView(r.layer);
+      const showing = (r.layer.visible !== false) && layerDrawsAtScale(r.layer);
       r.nameEl.classList.toggle("ll-name-dim", !showing);
     });
   }
@@ -1144,10 +1058,6 @@ require([
       // attribute table — feature/geojson/csv layers, plus graphics layers (your drawings + uploaded data)
       if(["feature","geojson","csv","graphics"].indexOf(layer.type) > -1){
         acts.appendChild(llActBtn(LL_ICON.table, "Show data table", ()=>openTable(layer)));
-      }
-      // style — uploaded point layers can pick marker, color, and size/color-by-field
-      if(layer.__fileSketch && layerHasPoints(layer)){
-        acts.appendChild(llActBtn(LL_ICON.style, "Style the points", ()=>openPointStyleModal(layer)));
       }
       // transparency: toggles a slider (0% = solid, 100% = invisible)
       const opWrap = document.createElement("div"); opWrap.className = "ll-opacity";
@@ -1361,7 +1271,7 @@ require([
   /* ---------- view + widgets (rebuilt when switching 2D <-> 3D) ---------- */
   let view = null, is3D = false, buildingsLayer = null;
   let search, measurement, sketch, coordWidget;
-  let homeW, locateW, scaleBar, pointerHandle, scaleHandle, extentHandle, placeClickHandle;
+  let homeW, locateW, scaleBar, pointerHandle, scaleHandle, placeClickHandle;
 
   function fmt(n){ return n.toFixed(5); }
 
@@ -1728,7 +1638,6 @@ require([
     search=measurement=sketch=coordWidget=homeW=locateW=scaleBar=null;
     try{ if(pointerHandle) pointerHandle.remove(); }catch(e){}
     try{ if(scaleHandle) scaleHandle.remove(); }catch(e){}
-    try{ if(extentHandle) extentHandle.remove(); }catch(e){}
     try{ if(placeClickHandle) placeClickHandle.remove(); }catch(e){}
     try{ if(textClickHandle){ textClickHandle.remove(); textClickHandle=null; } }catch(e){}
     if(view){
@@ -1823,7 +1732,6 @@ require([
       if(pt && pt.latitude!=null) $("coordOut").textContent = `${fmt(pt.latitude)}, ${fmt(pt.longitude)}`;
     });
     scaleHandle = view.watch("scale", (s)=>{ if(s) $("scaleOut").textContent = Math.round(s).toLocaleString(); updateLayerNameStates(); });
-    extentHandle = view.watch("extent", ()=> updateLayerNameStates());   // dim names when a layer is off-screen
   }
 
   /* ---------- 3D context: real ArcGIS 3D services (terrain + OSM buildings) ---------- */
@@ -2753,212 +2661,6 @@ require([
     return added;
   }
 
-  // ===== Style uploaded point layers: marker, color, size-by-field, color-ramp-by-field =====
-  const PSM_COLORS = ["#E23B3B","#E8743B","#F2C53D","#3FA34D","#2BB3A3","#2D72D9","#7C4DD1","#E255A1","#2A2622","#FFFFFF"];
-  const RAMP_LIST = [
-    { id:"blues",   label:"Blues",     stops:["#eff3ff","#6baed6","#08519c"] },
-    { id:"reds",    label:"Reds",      stops:["#fee5d9","#fb6a4a","#a50f15"] },
-    { id:"greens",  label:"Greens",    stops:["#edf8e9","#74c476","#006d2c"] },
-    { id:"sunset",  label:"Sunset",    stops:["#ffffb2","#fd8d3c","#bd0026"] },
-    { id:"viridis", label:"Viridis",   stops:["#440154","#21918c","#fde725"] },
-    { id:"coolwarm",label:"Cool–Warm", stops:["#3b4cc0","#e8e8e8","#b40426"] }
-  ];
-  function rampStops(id){ const r = RAMP_LIST.find(x=>x.id===id); return r ? r.stops : RAMP_LIST[0].stops; }
-  function rampHexAt(stops, t){
-    t = Math.max(0, Math.min(1, t));
-    const seg = t*(stops.length-1), i = Math.floor(seg);
-    if(i >= stops.length-1) return stops[stops.length-1];
-    const a = hexToRgb(stops[i]), b = hexToRgb(stops[i+1]), f = seg-i;
-    const mix = a.map((av,k)=> Math.round(av + (b[k]-av)*f));
-    return "#" + mix.map(x=> x.toString(16).padStart(2,"0")).join("");
-  }
-  function markerSymbol(shape, hex, size){
-    const c = hexToRgb(hex); size = size || 12;
-    if(shape==="pin" || shape==="pin-dot"){
-      return { type:"simple-marker", style:"path", path:(shape==="pin-dot"?PIN_DOT_PATH:PIN_PATH),
-               color:c.concat(1), size:size, outline:{ color:[42,38,34,0.85], width:1 }, yoffset:Math.round(size/2) };
-    }
-    return { type:"simple-marker", style:shape, color:c.concat(1), size:size, outline:{ color:[42,38,34,0.85], width:1.25 } };
-  }
-  function layerPointGraphics(layer){
-    return (layer && layer.graphics ? layer.graphics.toArray() : [])
-      .filter(g=> g.geometry && (g.geometry.type==="point" || g.geometry.type==="multipoint"));
-  }
-  function layerHasPoints(layer){ return layer && layer.type==="graphics" && layerPointGraphics(layer).length>0; }
-  const COORD_FIELDS = ["lat","latitude","lon","lng","long","longitude","x","y","ycoord","xcoord"];
-  function numericFieldsOf(layer){
-    const pts = layerPointGraphics(layer); if(!pts.length) return [];
-    const seen = {}, ok = {};
-    pts.forEach(g=>{ const a = g.attributes || {}; Object.keys(a).forEach(k=>{
-      seen[k] = (seen[k]||0)+1;
-      const v = a[k];
-      if(v !== null && v !== "" && isFinite(Number(v))) ok[k] = (ok[k]||0)+1;
-    }); });
-    return Object.keys(seen).filter(k=>
-      ok[k] && ok[k] >= Math.max(2, seen[k]*0.6) && COORD_FIELDS.indexOf(k.toLowerCase())===-1
-    );
-  }
-  const numVal = (g, f)=> Number(g.attributes ? g.attributes[f] : NaN);
-  function scaleVal(v, inMin, inMax, outMin, outMax){
-    if(!(inMax > inMin)) return outMax;
-    const t = Math.max(0, Math.min(1, (v-inMin)/(inMax-inMin)));
-    return outMin + (outMax-outMin)*t;
-  }
-  function quantileBreaks(values, n){
-    const v = values.slice().sort((a,b)=>a-b), out = [];
-    for(let i=0;i<=n;i++){ const idx=(v.length-1)*(i/n), lo=Math.floor(idx), hi=Math.ceil(idx);
-      out.push(v[lo] + (v[hi]-v[lo])*(idx-lo)); }
-    return out; // n+1 edges
-  }
-  function classIndexOf(v, breaks){
-    for(let i=0;i<breaks.length-1;i++){ if(v <= breaks[i+1]) return i; }
-    return breaks.length-2;
-  }
-  function fmtNum(n){
-    if(!isFinite(n)) return "";
-    const a = Math.abs(n);
-    if(a>=1000) return Math.round(n).toLocaleString();
-    if(a>=10)   return (Math.round(n*10)/10).toString();
-    return (Math.round(n*100)/100).toString();
-  }
-  function applyPointStyle(layer, st){
-    const pts = layerPointGraphics(layer); if(!pts.length) return;
-    const NCLASS = 5, SIZE_MIN = 6;
-    let breaks = null, sMin = 0, sMax = 0;
-    if(st.colorField){ const vals = pts.map(g=>numVal(g,st.colorField)).filter(isFinite);
-      if(vals.length) breaks = quantileBreaks(vals, NCLASS); else st = Object.assign({}, st, {colorField:null}); }
-    if(st.sizeField){ const vals = pts.map(g=>numVal(g,st.sizeField)).filter(isFinite);
-      if(vals.length){ sMin = Math.min.apply(null,vals); sMax = Math.max.apply(null,vals); } else st = Object.assign({}, st, {sizeField:null}); }
-    pts.forEach(g=>{
-      let size = st.size;
-      if(st.sizeField){ const v = numVal(g,st.sizeField); size = isFinite(v) ? scaleVal(v, sMin, sMax, SIZE_MIN, st.size) : SIZE_MIN; }
-      let color = st.color;
-      if(st.colorField && breaks){ const v = numVal(g,st.colorField); color = isFinite(v) ? rampHexAt(rampStops(st.ramp), (classIndexOf(v,breaks)+0.5)/NCLASS) : "#bbbbbb"; }
-      g.symbol = markerSymbol(st.shape, color, size);
-    });
-    // build a meaningful legend for this layer
-    const rows = [];
-    if(st.colorField && breaks){
-      rows.push({ symbol:null, label:"Colored by " + st.colorField });
-      for(let i=0;i<NCLASS;i++){
-        const col = rampHexAt(rampStops(st.ramp), (i+0.5)/NCLASS);
-        const sz  = st.sizeField ? (SIZE_MIN + st.size)/2 : st.size;
-        rows.push({ symbol:markerSymbol(st.shape, col, Math.min(sz,16)), label:`${fmtNum(breaks[i])} – ${fmtNum(breaks[i+1])}` });
-      }
-    } else if(st.sizeField){
-      rows.push({ symbol:null, label:"Sized by " + st.sizeField });
-      const mid = (sMin+sMax)/2;
-      [sMin, mid, sMax].forEach(val=>{
-        rows.push({ symbol:markerSymbol(st.shape, st.color, Math.min(scaleVal(val,sMin,sMax,SIZE_MIN,st.size),20)), label:fmtNum(val) });
-      });
-    } else {
-      rows.push({ symbol:markerSymbol(st.shape, st.color, Math.min(st.size,16)), label:"Point" });
-    }
-    layer.__legendRows = rows;
-    layer.__style = Object.assign({}, st);
-  }
-
-  // ---- the modal ----
-  let psmLayer = null, psmState = null;
-  function defaultPointStyle(){ return { shape:"circle", color:"#2D72D9", size:12, sizeField:null, colorField:null, ramp:"blues" }; }
-  function psmReapply(){ if(psmLayer && psmState) applyPointStyle(psmLayer, psmState); }
-  function buildPsmMarkers(){
-    const box = $("psmMarkers"); if(!box) return; box.innerHTML = "";
-    POINT_STYLES.forEach(st=>{
-      const b = document.createElement("button");
-      b.className = "marker-btn" + (st.id===psmState.shape ? " active" : "");
-      b.title = st.label; b.setAttribute("aria-label", st.label);
-      b.innerHTML = `<svg viewBox="0 0 22 22" fill="currentColor">${markerPreview(st.id)}</svg>`;
-      b.addEventListener("click", ()=>{
-        psmState.shape = st.id;
-        box.querySelectorAll(".marker-btn").forEach(x=>x.classList.remove("active")); b.classList.add("active");
-        psmReapply();
-      });
-      box.appendChild(b);
-    });
-  }
-  function buildPsmSwatches(){
-    const box = $("psmSwatches"); if(!box) return; box.innerHTML = "";
-    PSM_COLORS.forEach(hex=>{
-      const b = document.createElement("button");
-      b.className = "swatch-btn" + (hex.toLowerCase()===psmState.color.toLowerCase() ? " active" : "");
-      b.style.background = hex; b.title = hex; b.dataset.color = hex;
-      b.addEventListener("click", ()=>{
-        psmState.color = hex;
-        box.querySelectorAll(".swatch-btn").forEach(x=>x.classList.remove("active")); b.classList.add("active");
-        const cc = $("psmCustom"); if(cc) cc.value = hex;
-        psmReapply();
-      });
-      box.appendChild(b);
-    });
-  }
-  function buildPsmRamps(){
-    const box = $("psmRamps"); if(!box) return; box.innerHTML = "";
-    RAMP_LIST.forEach(r=>{
-      const b = document.createElement("button");
-      b.className = "ramp-btn" + (r.id===psmState.ramp ? " active" : "");
-      b.title = r.label; b.setAttribute("aria-label", r.label);
-      b.style.background = `linear-gradient(to right, ${r.stops.join(",")})`;
-      b.addEventListener("click", ()=>{
-        psmState.ramp = r.id;
-        box.querySelectorAll(".ramp-btn").forEach(x=>x.classList.remove("active")); b.classList.add("active");
-        psmReapply();
-      });
-      box.appendChild(b);
-    });
-  }
-  function fillFieldSelect(sel, fields, current){
-    sel.innerHTML = "";
-    fields.forEach(f=>{ const o = document.createElement("option"); o.value=f; o.textContent=f; if(f===current) o.selected=true; sel.appendChild(o); });
-  }
-  function openPointStyleModal(layer){
-    if(!layerHasPoints(layer)){ toast("This layer has no points to style."); return; }
-    psmLayer = layer;
-    psmState = layer.__style ? Object.assign(defaultPointStyle(), layer.__style) : defaultPointStyle();
-    const fields = numericFieldsOf(layer);
-    const hasNums = fields.length > 0;
-
-    buildPsmMarkers(); buildPsmSwatches(); buildPsmRamps();
-    const cc = $("psmCustom"); if(cc) cc.value = /^#[0-9a-fA-F]{6}$/.test(psmState.color) ? psmState.color : "#2D72D9";
-    const sizeR = $("psmSize"); if(sizeR){ sizeR.value = psmState.size; $("psmSizeVal").textContent = psmState.size + " px"; }
-
-    // size-by
-    const sizeBy = $("psmSizeBy"), sizeSel = $("psmSizeField"), sizeNote = $("psmSizeNote");
-    sizeBy.disabled = !hasNums; sizeBy.checked = !!psmState.sizeField;
-    if(hasNums){ fillFieldSelect(sizeSel, fields, psmState.sizeField || fields[0]); }
-    sizeSel.style.display = psmState.sizeField ? "" : "none";
-    sizeNote.style.display = psmState.sizeField ? "" : "none";
-
-    // color-by
-    const colorBy = $("psmColorBy"), colorSel = $("psmColorField"), ramps = $("psmRamps");
-    colorBy.disabled = !hasNums; colorBy.checked = !!psmState.colorField;
-    if(hasNums){ fillFieldSelect(colorSel, fields, psmState.colorField || fields[0]); }
-    colorSel.style.display = psmState.colorField ? "" : "none";
-    ramps.style.display = psmState.colorField ? "" : "none";
-    $("psmNoNums").style.display = hasNums ? "none" : "";
-
-    psmReapply();
-    $("pointStyleModal").classList.add("open");
-  }
-  (function wirePointStyleModal(){
-    const sizeR=$("psmSize"), sizeBy=$("psmSizeBy"), sizeSel=$("psmSizeField"), sizeNote=$("psmSizeNote");
-    const colorBy=$("psmColorBy"), colorSel=$("psmColorField"), ramps=$("psmRamps"), cc=$("psmCustom");
-    if(cc) cc.addEventListener("input", ()=>{ if(!psmState) return; psmState.color = cc.value;
-      document.querySelectorAll("#psmSwatches .swatch-btn").forEach(b=> b.classList.toggle("active",(b.dataset.color||"").toLowerCase()===cc.value.toLowerCase())); psmReapply(); });
-    if(sizeR) sizeR.addEventListener("input", ()=>{ if(!psmState) return; psmState.size = +sizeR.value; $("psmSizeVal").textContent = sizeR.value + " px"; psmReapply(); });
-    if(sizeBy) sizeBy.addEventListener("change", ()=>{ if(!psmState) return;
-      psmState.sizeField = sizeBy.checked ? (sizeSel.value || null) : null;
-      sizeSel.style.display = sizeBy.checked ? "" : "none"; sizeNote.style.display = sizeBy.checked ? "" : "none"; psmReapply(); });
-    if(sizeSel) sizeSel.addEventListener("change", ()=>{ if(!psmState) return; if(sizeBy.checked){ psmState.sizeField = sizeSel.value; psmReapply(); } });
-    if(colorBy) colorBy.addEventListener("change", ()=>{ if(!psmState) return;
-      psmState.colorField = colorBy.checked ? (colorSel.value || null) : null;
-      colorSel.style.display = colorBy.checked ? "" : "none"; ramps.style.display = colorBy.checked ? "" : "none"; psmReapply(); });
-    if(colorSel) colorSel.addEventListener("change", ()=>{ if(!psmState) return; if(colorBy.checked){ psmState.colorField = colorSel.value; psmReapply(); } });
-    const done=$("psmDone"), reset=$("psmReset");
-    if(done) done.addEventListener("click", ()=>{ $("pointStyleModal").classList.remove("open"); renderLayerList(); openPane("layers"); });
-    if(reset) reset.addEventListener("click", ()=>{ if(!psmLayer) return; psmState = defaultPointStyle(); openPointStyleModal(psmLayer); });
-  })();
-
   function handleDataFile(name, text){
     const ext = (name.split(".").pop()||"").toLowerCase();
     let added=[];
@@ -2985,8 +2687,7 @@ require([
     enforceLayerOrder(); renderLayerList();
     view.goTo(added).catch(()=>{});
     toast(`Added ${added.length} feature${added.length>1?"s":""} as “Sketch layer ${name}”`);
-    if(layerHasPoints(fileLayer)) openPointStyleModal(fileLayer);   // let the user pick marker, color, size/color-by-field
-    else openPane("layers");
+    openPane("layers");
   }
 
   $("dataUploadBtn").addEventListener("click", ()=>$("dataFileInput").click());
