@@ -2149,10 +2149,11 @@ require([
       const fields = keys.map(k=> k==="OBJECTID"
         ? { name:"OBJECTID", type:"esriFieldTypeOID", alias:"OBJECTID" }
         : { name:k, type:"esriFieldTypeString", alias:k });
-      const layerDefinition = { name:(opts.name||"Features")+" "+(i+1), geometryType:et, objectIdField:"OBJECTID", fields:fields };
+      const layerDefinition = { name:(opts.name||"Features")+" "+(i+1), type:"Feature Layer", geometryType:et, objectIdField:"OBJECTID", fields:fields };
       const repSym = (grp.feats.find(f=>f.symbol)||{}).symbol;   // give AGOL viewers a renderer so the layer draws
       if(repSym) layerDefinition.drawingInfo = { renderer:{ type:"simple", symbol:repSym } };
       return {
+        id:i,
         layerDefinition:layerDefinition,
         featureSet:{ geometryType:et, spatialReference:view.spatialReference.toJSON(), features:grp.feats }
       };
@@ -2381,22 +2382,6 @@ require([
     const s=$("agolStatus"); if(s) s.innerHTML="";
     updateAgolUI();
   }
-  // sketch + uploaded data as feature-collection operational layers (SDK's updateFrom skips GraphicsLayers)
-  function agolFeatureCollectionExtras(){
-    const extras = [];
-    map.layers.forEach(l=>{
-      if(addedLayers.indexOf(l) === -1) return;
-      if(l.__fileSketch){
-        const fc = featureCollectionFromGraphics(l.graphics, {
-          id:l.__fcId || ("mapexplorer-file-"+Date.now().toString(36)), title:l.title, name:"Data",
-          opacity:l.opacity, visibility:l.visible
-        });
-        if(fc) extras.push(fc);
-      }
-    });
-    const sk = sketchFeatureCollection(); if(sk) extras.push(sk);
-    return extras;
-  }
   function agolPostItem(title, text, status){
     const url = `${AGOL_REST}/content/users/${encodeURIComponent(agolUser.username)}/addItem`;
     const body = new URLSearchParams();
@@ -2418,31 +2403,29 @@ require([
       }
     }).catch(()=>{ if(status) status.textContent = "Save failed (network or permissions)."; toast("ArcGIS save failed."); });
   }
-  function legacyWebMapText(title){
-    const wm = buildWebMap(title);
-    return JSON.stringify({
-      operationalLayers: wm.operationalLayers, baseMap: wm.baseMap, spatialReference: wm.spatialReference,
-      version: wm.version, authoringApp: wm.authoringApp, authoringAppVersion: wm.authoringAppVersion, initialState: wm.initialState
-    });
-  }
   function saveToAGOL(title){
     if(!agolToken || !agolUser){ const s=$("agolStatus"); if(s) s.textContent="Please sign in first."; return; }
     const status=$("agolStatus"); if(status) status.textContent = "Preparing the map…";
-    let wm = null; try{ wm = new WebMap(); }catch(e){}
-    if(wm && wm.updateFrom){
-      // let the SDK produce spec-compliant web map JSON, then add sketches/uploads as feature collections
-      wm.updateFrom(view).then(()=>{
-        let j = null; try{ j = wm.toJSON(); }catch(e){}
-        if(j){
-          j.operationalLayers = (j.operationalLayers || []).concat(agolFeatureCollectionExtras());
-          agolPostItem(title, JSON.stringify(j), status);
-        } else {
-          agolPostItem(title, legacyWebMapText(title), status);
-        }
-      }).catch(()=>{ agolPostItem(title, legacyWebMapText(title), status); });
-    } else {
-      agolPostItem(title, legacyWebMapText(title), status);
-    }
+    const wm = buildWebMap(title);
+    // ArcGIS Online viewers draw feature collections from the layer renderer (drawingInfo), NOT from a
+    // per-feature "symbol". We store that symbol for our own re-open, but it must be removed for AGOL,
+    // otherwise the viewer can fail to parse the layer and the map spins.
+    (wm.operationalLayers || []).forEach(op=>{
+      if(op && op.featureCollection && op.featureCollection.layers){
+        op.featureCollection.layers.forEach(sub=>{
+          ((sub.featureSet && sub.featureSet.features) || []).forEach(f=>{ if(f && f.symbol) delete f.symbol; });
+        });
+      }
+    });
+    const text = JSON.stringify({
+      operationalLayers: wm.operationalLayers,
+      baseMap: wm.baseMap,
+      spatialReference: wm.spatialReference,
+      version: "2.27",                                   // a widely-supported web map version
+      authoringApp: "Map Explorer", authoringAppVersion: "1.0",
+      initialState: wm.initialState
+    });
+    agolPostItem(title, text, status);
   }
 
   // wire the AGOL controls (guarded so a missing element never breaks init)
