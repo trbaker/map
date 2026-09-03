@@ -2149,8 +2149,11 @@ require([
       const fields = keys.map(k=> k==="OBJECTID"
         ? { name:"OBJECTID", type:"esriFieldTypeOID", alias:"OBJECTID" }
         : { name:k, type:"esriFieldTypeString", alias:k });
+      const layerDefinition = { name:(opts.name||"Features")+" "+(i+1), geometryType:et, objectIdField:"OBJECTID", fields:fields };
+      const repSym = (grp.feats.find(f=>f.symbol)||{}).symbol;   // give AGOL viewers a renderer so the layer draws
+      if(repSym) layerDefinition.drawingInfo = { renderer:{ type:"simple", symbol:repSym } };
       return {
-        layerDefinition:{ name:(opts.name||"Features")+" "+(i+1), geometryType:et, objectIdField:"OBJECTID", fields:fields },
+        layerDefinition:layerDefinition,
         featureSet:{ geometryType:et, spatialReference:view.spatialReference.toJSON(), features:grp.feats }
       };
     });
@@ -2378,25 +2381,30 @@ require([
     const s=$("agolStatus"); if(s) s.innerHTML="";
     updateAgolUI();
   }
-  function saveToAGOL(title){
-    if(!agolToken || !agolUser){ const s=$("agolStatus"); if(s) s.textContent="Please sign in first."; return; }
-    const user = agolUser.username;
-    const wm = buildWebMap(title);
-    const text = JSON.stringify({
-      operationalLayers: wm.operationalLayers,
-      baseMap: wm.baseMap,
-      spatialReference: wm.spatialReference,
-      version: wm.version,
-      authoringApp: wm.authoringApp, authoringAppVersion: wm.authoringAppVersion,
-      initialState: wm.initialState
+  // sketch + uploaded data as feature-collection operational layers (SDK's updateFrom skips GraphicsLayers)
+  function agolFeatureCollectionExtras(){
+    const extras = [];
+    map.layers.forEach(l=>{
+      if(addedLayers.indexOf(l) === -1) return;
+      if(l.__fileSketch){
+        const fc = featureCollectionFromGraphics(l.graphics, {
+          id:l.__fcId || ("mapexplorer-file-"+Date.now().toString(36)), title:l.title, name:"Data",
+          opacity:l.opacity, visibility:l.visible
+        });
+        if(fc) extras.push(fc);
+      }
     });
-    const url = `${AGOL_REST}/content/users/${encodeURIComponent(user)}/addItem`;
+    const sk = sketchFeatureCollection(); if(sk) extras.push(sk);
+    return extras;
+  }
+  function agolPostItem(title, text, status){
+    const url = `${AGOL_REST}/content/users/${encodeURIComponent(agolUser.username)}/addItem`;
     const body = new URLSearchParams();
     body.set("f","json"); body.set("token", agolToken);
     body.set("title", title || "My Map"); body.set("type","Web Map");
-    body.set("typeKeywords","Web Map, Map, Online Map, ArcGIS Online"); body.set("tags","Map Explorer");
-    body.set("snippet","Created with Map Explorer"); body.set("text", text);
-    const status=$("agolStatus"); if(status) status.textContent = "Saving to ArcGIS Online…";
+    body.set("typeKeywords","Web Map, Map, Online Map, ArcGIS Online");
+    body.set("tags","Map Explorer"); body.set("snippet","Created with Map Explorer"); body.set("text", text);
+    if(status) status.textContent = "Saving to ArcGIS Online…";
     toast("Saving to ArcGIS Online…");
     fetch(url, { method:"POST", body }).then(r=>r.json()).then(j=>{
       if(j && j.success && j.id){
@@ -2409,6 +2417,32 @@ require([
         toast("ArcGIS save failed.");
       }
     }).catch(()=>{ if(status) status.textContent = "Save failed (network or permissions)."; toast("ArcGIS save failed."); });
+  }
+  function legacyWebMapText(title){
+    const wm = buildWebMap(title);
+    return JSON.stringify({
+      operationalLayers: wm.operationalLayers, baseMap: wm.baseMap, spatialReference: wm.spatialReference,
+      version: wm.version, authoringApp: wm.authoringApp, authoringAppVersion: wm.authoringAppVersion, initialState: wm.initialState
+    });
+  }
+  function saveToAGOL(title){
+    if(!agolToken || !agolUser){ const s=$("agolStatus"); if(s) s.textContent="Please sign in first."; return; }
+    const status=$("agolStatus"); if(status) status.textContent = "Preparing the map…";
+    let wm = null; try{ wm = new WebMap(); }catch(e){}
+    if(wm && wm.updateFrom){
+      // let the SDK produce spec-compliant web map JSON, then add sketches/uploads as feature collections
+      wm.updateFrom(view).then(()=>{
+        let j = null; try{ j = wm.toJSON(); }catch(e){}
+        if(j){
+          j.operationalLayers = (j.operationalLayers || []).concat(agolFeatureCollectionExtras());
+          agolPostItem(title, JSON.stringify(j), status);
+        } else {
+          agolPostItem(title, legacyWebMapText(title), status);
+        }
+      }).catch(()=>{ agolPostItem(title, legacyWebMapText(title), status); });
+    } else {
+      agolPostItem(title, legacyWebMapText(title), status);
+    }
   }
 
   // wire the AGOL controls (guarded so a missing element never breaks init)
