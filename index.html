@@ -479,7 +479,7 @@
     <button id="btnLearn" title="Open the lesson worksheet for this map">📖 Learn</button>
     <button id="btnDebug" class="temp-btn" title="Troubleshooting info (temporary)" style="display:none">🐞 Debug</button>
     <button id="btnSave" class="primary">💾 Save map</button>
-    <input type="file" id="fileInput" accept=".json,application/json" style="display:none" />
+    <input type="file" id="fileInput" accept=".mapexplorer,.json,application/json" style="display:none" />
   </header>
 
   <div id="body">
@@ -509,7 +509,7 @@
           <p class="hint">Open a map you saved before, or open one from ArcGIS Online.</p>
 
           <label class="field-label">1. Your own map</label>
-          <p class="hint" style="margin:0 0 8px">Open a Map Explorer file (<b>.json</b>) you saved earlier.</p>
+          <p class="hint" style="margin:0 0 8px">Open a Map Explorer file (<b>.mapexplorer</b> or <b>.json</b>) you saved earlier.</p>
           <button class="btn" id="openFileBtn">📁 Open a .json map file…</button>
 
           <label class="field-label">2. ArcGIS Online maps</label>
@@ -688,11 +688,11 @@
 <div class="modal-bg" id="saveModal">
   <div class="modal">
     <h3>Save your map</h3>
-    <p>Save a web map file (<b>.json</b>) you can open again here or upload to ArcGIS Online — or export the current view as a <b>.jpg</b> image.</p>
+    <p>Save a map file (<b>.mapexplorer</b>) you can open again here — or export the current view as a <b>.jpg</b> image. To save into your ArcGIS Online account, use the section below.</p>
     <label class="field-label" for="mapTitle">Map name</label>
     <input type="text" id="mapTitle" value="My Map" />
     <div class="btn-row">
-      <button class="btn marker" id="saveConfirm">Save .json map file</button>
+      <button class="btn marker" id="saveConfirm">Save .mapexplorer file</button>
       <button class="btn ghost" id="saveCancel">Cancel</button>
     </div>
     <button class="btn" id="exportJpgBtn" style="margin-top:8px;width:100%">🖼️ Export the map to a JPG image</button>
@@ -2309,7 +2309,7 @@ require([
     const a = document.createElement("a");
     const safe = (title||"my-map").replace(/[^\w\- ]+/g,"").trim().replace(/\s+/g,"-").toLowerCase() || "my-map";
     a.href = URL.createObjectURL(blob);
-    a.download = `${safe}.json`;
+    a.download = `${safe}.mapexplorer`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
     toast("Map saved to your computer");
