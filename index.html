@@ -2417,6 +2417,19 @@ require([
         });
       }
     });
+    // Vector-tile basemaps must carry an itemId (and type), not just a styleUrl, or the new Map Viewer
+    // can't resolve the basemap and the whole map spins. Recover the itemId from the style URL.
+    if(wm.baseMap && wm.baseMap.baseMapLayers){
+      wm.baseMap.baseMapLayers.forEach(bl=>{
+        if(bl && bl.layerType === "VectorTileLayer"){
+          if(!bl.type) bl.type = "VectorTileLayer";
+          if(bl.styleUrl && !bl.itemId){
+            const m = String(bl.styleUrl).match(/items\/([0-9A-Fa-f]{32})/);
+            if(m) bl.itemId = m[1];
+          }
+        }
+      });
+    }
     const text = JSON.stringify({
       operationalLayers: wm.operationalLayers,
       baseMap: wm.baseMap,
